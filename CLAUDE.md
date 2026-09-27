@@ -135,7 +135,7 @@ Gli step 1–4 committano file **già presenti** nella cartella: rileggili, veri
   - Creazione atomica annuncio + varianti + revisioni + puntatori; nuova revisione manuale; ripristino di una revisione.
   - Transizioni di stato (proposta da confermare): `draft→active`, `active→closed`, `closed→active`, `draft|closed→archived`; `archived` è terminale.
   - Test su DB in memoria.
-- [ ] **7. `feat/render`**
+- [x] **7. `feat/render`**
   - Formattazione del luogo per precisione e della RAL per framing (`it-IT`).
   - Testo per kind: Indeed (campi + descrizione), WhatsApp (markup `*grassetto*`), caption social.
   - Template HTML per `JobSheet` (A4) e `Creative` (1:1, 4:5, 9:16), con segnaposto per foto e logo e testo sempre escapato.

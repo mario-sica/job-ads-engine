@@ -34,7 +34,7 @@
    - il prompt vieta informazioni assenti dall'input;
    - un dettaglio legittimo ma non presente nei dati resta possibile con l'edit manuale.
 9. **Il formato decide le parti, il kind la loro forma.** Dagli esempi emerge che il foglio WhatsApp contiene lo stesso corpo di Indeed, più intestazione ed etichette. Invece di uno schema per canale, compongo blocchi riusabili.
-10. **Proporzioni.** 1:1, 4:5 e 9:16 cambiano layout e limiti (override in `specs`), non la forma del contenuto: una sola `Creative` con template diversi.
+10. **Proporzioni.** 1:1, 4:5 e 9:16 cambiano layout e limiti (override in `specs`), non la forma del contenuto: una sola `Creative` e un solo template HTML che si adatta alle dimensioni. Template distinti per proporzione sarebbero più curati, ma la priorità va alla generazione.
 
 ## Cosa ho sacrificato
 

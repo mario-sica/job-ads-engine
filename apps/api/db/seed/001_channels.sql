@@ -1,16 +1,19 @@
 -- 001_channels.sql — Canali e combinazioni pubblicabili
 --
 -- `specs` contiene le dimensioni della tela e gli override dei limiti editoriali.
--- I default dei limiti stanno in src/content/blocks.ts: qui si scrive solo
+-- I default dei limiti stanno in packages/content/src/blocks.ts: qui si scrive solo
 -- ciò che differisce per quella specifica combinazione.
+--
+-- INSERT OR IGNORE rende il seed ripetibile: le righe già presenti restano come
+-- sono, quelle aggiunte qui in seguito entrano al seed successivo.
 
-INSERT INTO channels (code, name, kind) VALUES
+INSERT OR IGNORE INTO channels (code, name, kind) VALUES
   ('indeed',    'Indeed',    'job_board'),
   ('whatsapp',  'WhatsApp',  'messaging'),
   ('instagram', 'Instagram', 'social'),
   ('tiktok',    'TikTok',    'social');
 
-INSERT INTO channel_formats (channel_code, format, aspect_ratio, specs) VALUES
+INSERT OR IGNORE INTO channel_formats (channel_code, format, aspect_ratio, specs) VALUES
   -- Job board: solo testo
   ('indeed', 'text', NULL, '{}'),
 

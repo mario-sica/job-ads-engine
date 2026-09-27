@@ -12,7 +12,8 @@
   ],
   "scripts": {
     "test": "npm run test --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "db:reset": "npm run db:reset -w @job-ads-engine/api"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",

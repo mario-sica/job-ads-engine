@@ -29,16 +29,19 @@ export function formatLocation(location: LocationInput, precision: LocationPreci
   }
 }
 
-export function formatSalary({ min, max, currency, framing }: Salary): string {
+/** Solo l'importo, per i campi che hanno già l'etichetta (es. il campo RAL di Indeed). */
+export function formatSalaryAmount({ min, max, currency, framing }: Salary): string {
   switch (framing) {
     case "range":
-      return `RAL ${numberFormat.format(min!)}–${money(max!, currency)}`;
+      return `${numberFormat.format(min!)}–${money(max!, currency)}`;
     case "from":
-      return `RAL da ${money(min!, currency)}`;
+      return `da ${money(min!, currency)}`;
     case "up_to":
-      return `RAL fino a ${money(max!, currency)}`;
+      return `fino a ${money(max!, currency)}`;
   }
 }
+
+export const formatSalary = (salary: Salary): string => `RAL ${formatSalaryAmount(salary)}`;
 
 export function formatExperience({ min_years, max_years }: Facts["experience"]): string | null {
   const years = (n: number) => `${n} ${n === 1 ? "anno" : "anni"}`;

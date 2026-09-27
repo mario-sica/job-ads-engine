@@ -1,0 +1,21 @@
+{
+  "name": "@job-ads-engine/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
+    "@job-ads-engine/content": "*",
+    "better-sqlite3": "^12.11.1",
+    "fastify": "^5.12.5",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "tsx": "^4.23.15"
+  }
+}

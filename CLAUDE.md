@@ -129,7 +129,7 @@ Gli step 1–4 committano file **già presenti** nella cartella: rileggili, veri
   - Seed: `001_channels.sql` più `job_offers.json` → `locations` e `job_offers` (con `raw`). Idempotente.
   - Script nel pacchetto api: `db:migrate`, `db:seed`, `db:reset`. In root: `db:reset`, che lo inoltra al pacchetto api.
   - Test: migrazioni idempotenti, seed corretto e ripetibile.
-- [ ] **6. `feat/ads-repository`**
+- [x] **6. `feat/ads-repository`**
   - Repository per job offer, channel format (con kind e specs già parsate), location (trova o crea), ads, varianti, revisioni.
   - Filtri su ads: `job_offer_id`, `channel`, `status`.
   - Creazione atomica annuncio + varianti + revisioni + puntatori; nuova revisione manuale; ripristino di una revisione.

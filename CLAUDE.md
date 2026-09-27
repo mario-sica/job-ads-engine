@@ -119,7 +119,7 @@ Gli step 1–4 committano file **già presenti** nella cartella: rileggili, veri
   - `packages/content/test/`;
   - `apps/api/test/`: test di integrazione tra seed e contratto.
 - [x] **4. `docs/initial-drafts`**: i cinque documenti e `CLAUDE.md`.
-- [ ] **5. `feat/db-layer`** (in `apps/api`)
+- [x] **5. `feat/db-layer`** (in `apps/api`)
   - `src/config.ts`: env validate con Zod (`DATABASE_PATH`, `PORT`, `LLM_MODEL`, `LLM_TIMEOUT_SECONDS`, `ANTHROPIC_API_KEY`).
     - Il file `.env` sta nella root del monorepo; caricalo da lì (es. `process.loadEnvFile`), se presente.
     - I percorsi relativi si risolvono dalla root; il default del DB è `apps/api/data/gyver.db`.

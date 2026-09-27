@@ -68,6 +68,13 @@ Il file `.env` sta nella root del monorepo.
 
 `npm run dev` applica migrazioni e seed se mancano. `npm run db:reset` ricrea il database da zero, senza gli annunci generati.
 
+Migrazioni e seed sono ripetibili: le migrazioni applicate sono registrate in `schema_migrations`, e il seed non tocca ciò che esiste già. Si possono lanciare anche singolarmente:
+
+```bash
+npm run db:migrate -w @job-ads-engine/api   # solo migrazioni
+npm run db:seed -w @job-ads-engine/api      # migrazioni e seed
+```
+
 ## Test
 
 ```bash

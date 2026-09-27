@@ -25,8 +25,8 @@ Monorepo con npm workspaces: tre pacchetti con responsabilità separate e un sol
 │   │   │   └── seed/        # canali, formati con i loro limiti, job offer di esempio
 │   │   ├── data/            # gyver.db, già popolato                          (TODO)
 │   │   ├── src/
-│   │   │   ├── config.ts    # variabili d'ambiente validate                   (TODO)
-│   │   │   ├── db/          # connessione, migrazioni e seed                   (TODO)
+│   │   │   ├── config.ts    # variabili d'ambiente validate, .env dalla root
+│   │   │   ├── db/          # connessione, migrazioni, seed e CLI db:*
 │   │   │   ├── modules/     # job-offers, ads: routes → service → repository   (TODO)
 │   │   │   ├── llm/         # proiezione, prompt, client, validazione e retry  (TODO)
 │   │   │   ├── render/      # testo per canale e template HTML per formato     (TODO)

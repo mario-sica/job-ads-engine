@@ -2,6 +2,7 @@ import { SCHEMA_VERSION } from "@job-ads-engine/content";
 import type { Db } from "../../db/connection.js";
 import { NotFoundError } from "../../errors.js";
 import { locationJson, type Location } from "../locations/repository.js";
+import { assertTransition, type AdStatus } from "./status.js";
 import type { Ad, AdFilters, AdWithVariants, Json, NewAd, Revision, RevisionInput, Variant, VariantInput } from "./types.js";
 
 const NOW = `strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`;
@@ -55,7 +56,21 @@ export function createAdsRepository(db: Db) {
     variantsOfAd: db.prepare(`${VARIANT_SELECT} WHERE ad_id = ? ORDER BY id`),
     variantById: db.prepare(`${VARIANT_SELECT} WHERE id = ?`),
     revisionById: db.prepare("SELECT * FROM ad_revisions WHERE id = ?"),
+    revisionsOfVariant: db.prepare("SELECT * FROM ad_revisions WHERE variant_id = ? ORDER BY id DESC"),
+    revisionOfVariant: db.prepare("SELECT id FROM ad_revisions WHERE id = ? AND variant_id = ?").pluck(),
+    adIdOfVariant: db.prepare("SELECT ad_id FROM ad_variants WHERE id = ?").pluck(),
+    statusOfAd: db.prepare("SELECT status FROM ads WHERE id = ?").pluck(),
+    setStatus: db.prepare(`UPDATE ads SET status = ?, updated_at = ${NOW} WHERE id = ?`),
+    setActive: db.prepare("UPDATE ad_variants SET is_active = ? WHERE id = ?"),
+    touchAd: db.prepare(`UPDATE ads SET updated_at = ${NOW} WHERE id = ?`),
   };
+
+  /** Id dell'annuncio a cui appartiene la variante; NotFoundError se non esiste. */
+  function adIdOf(variantId: number): number {
+    const adId = stmt.adIdOfVariant.get(variantId) as number | undefined;
+    if (adId === undefined) throw new NotFoundError("variant", variantId);
+    return adId;
+  }
 
   function insertRevision(variantId: number, revision: RevisionInput): number {
     const llm = revision.source === "llm" ? revision : null;
@@ -91,6 +106,42 @@ export function createAdsRepository(db: Db) {
     return adId;
   });
 
+  const addVariant = db.transaction((adId: number, variant: VariantInput): number => {
+    if (stmt.statusOfAd.get(adId) === undefined) throw new NotFoundError("ad", adId);
+    const variantId = insertVariant(adId, variant);
+    stmt.touchAd.run(adId);
+    return variantId;
+  });
+
+  const addRevision = db.transaction((variantId: number, revision: RevisionInput): number => {
+    const adId = adIdOf(variantId);
+    const revisionId = insertRevision(variantId, revision);
+    stmt.setCurrentRevision.run(revisionId, variantId);
+    stmt.touchAd.run(adId);
+    return revisionId;
+  });
+
+  const restoreRevision = db.transaction((variantId: number, revisionId: number): void => {
+    const adId = adIdOf(variantId);
+    // Anche la FK composta lo impedirebbe; qui diventa un 404 leggibile invece di un errore SQL.
+    if (stmt.revisionOfVariant.get(revisionId, variantId) === undefined) throw new NotFoundError("revision", revisionId);
+    stmt.setCurrentRevision.run(revisionId, variantId);
+    stmt.touchAd.run(adId);
+  });
+
+  const setVariantActive = db.transaction((variantId: number, active: boolean): void => {
+    const adId = adIdOf(variantId);
+    stmt.setActive.run(active ? 1 : 0, variantId);
+    stmt.touchAd.run(adId);
+  });
+
+  const updateStatus = db.transaction((adId: number, to: AdStatus): void => {
+    const from = stmt.statusOfAd.get(adId) as AdStatus | undefined;
+    if (from === undefined) throw new NotFoundError("ad", adId);
+    assertTransition(from, to);
+    stmt.setStatus.run(to, adId);
+  });
+
   const repo = {
     list(filters: AdFilters = {}): Ad[] {
       const rows = stmt.adsFiltered.all({
@@ -117,6 +168,39 @@ export function createAdsRepository(db: Db) {
     /** Annuncio, varianti, revisioni e puntatori in un'unica transazione. */
     create(input: NewAd): AdWithVariants {
       return repo.get(createAd(input));
+    },
+
+    /** Nuova variante con la sua prima revisione. La label la sceglie il chiamante. */
+    addVariant(adId: number, variant: VariantInput): Variant {
+      return repo.getVariant(addVariant(adId, variant));
+    },
+
+    /** Nuova revisione (edit manuale o rigenerazione) che diventa la corrente. */
+    addRevision(variantId: number, revision: RevisionInput): Revision {
+      return toRevision(stmt.revisionById.get(addRevision(variantId, revision)) as RevisionRow);
+    },
+
+    /** Storico della variante, dalla revisione più recente. */
+    listRevisions(variantId: number): Revision[] {
+      adIdOf(variantId);
+      return (stmt.revisionsOfVariant.all(variantId) as RevisionRow[]).map(toRevision);
+    },
+
+    /** Ripristino: il puntatore torna su una revisione esistente, senza crearne una nuova. */
+    restoreRevision(variantId: number, revisionId: number): Variant {
+      restoreRevision(variantId, revisionId);
+      return repo.getVariant(variantId);
+    },
+
+    setVariantActive(variantId: number, active: boolean): Variant {
+      setVariantActive(variantId, active);
+      return repo.getVariant(variantId);
+    },
+
+    /** Cambio di stato; InvalidTransitionError se il ciclo di vita non lo ammette. */
+    updateStatus(adId: number, to: AdStatus): AdWithVariants {
+      updateStatus(adId, to);
+      return repo.get(adId);
     },
   };
   return repo;

@@ -27,7 +27,7 @@ Monorepo con npm workspaces: tre pacchetti con responsabilità separate e un sol
 │   │   ├── src/
 │   │   │   ├── config.ts    # variabili d'ambiente validate, .env dalla root
 │   │   │   ├── db/          # connessione, migrazioni, seed e CLI db:*
-│   │   │   ├── modules/     # job-offers, ads: routes → service → repository   (TODO)
+│   │   │   ├── modules/     # job-offers, channel-formats, locations, ads (repository; routes e service TODO)
 │   │   │   ├── llm/         # proiezione, prompt, client, validazione e retry  (TODO)
 │   │   │   ├── render/      # testo per canale e template HTML per formato     (TODO)
 │   │   │   └── server.ts    # bootstrap Fastify                                (TODO)
@@ -89,7 +89,7 @@ L'annuncio referenzia una riga di `channel_formats`, quindi una combinazione non
 - `angle` è la direzione data all'LLM per orientare il copy (es. "punta sulla crescita di carriera"). Si salva per poter rigenerare e per capire a posteriori cosa distingue due varianti.
 - `is_active` spegne una variante perdente senza chiudere l'annuncio.
 
-**Revisione (`ad_revisions`).** È il contenuto vero e proprio, append-only. Una modifica manuale crea una nuova revisione e sposta `current_revision_id`. Le precedenti restano consultabili e ripristinabili.
+**Revisione (`ad_revisions`).** È il contenuto vero e proprio, append-only. Una modifica manuale crea una nuova revisione e sposta `current_revision_id`. Le precedenti restano consultabili e ripristinabili: il ripristino riporta il puntatore su una revisione esistente, senza crearne una nuova, così il contenuto non si duplica e la provenienza (`llm` o `manual`) resta quella originale.
 
 **Luogo (`locations`).** Tabella condivisa tra job offer e annunci.
 - Il luogo dell'annuncio è quello **mostrato** (es. il chip "📍 Orzinuovi (BS)" del foglio WhatsApp). Di default è quello della job offer, ma può differire.
@@ -136,7 +136,22 @@ Il livello superiore è strict: un formato `image` con una parte `text` è rifiu
 
 ### Stati
 
-Annuncio: `draft → active → closed → archived`.
+Ciclo di vita dell'annuncio:
+
+```mermaid
+stateDiagram-v2
+  [*] --> draft
+  draft --> active
+  draft --> archived
+  active --> closed
+  closed --> active
+  closed --> archived
+  archived --> [*]
+```
+
+- Un annuncio chiuso si può riattivare; uno attivo va chiuso prima di essere archiviato.
+- `archived` è terminale.
+- Una transizione non ammessa è un errore (`409`) e lascia lo stato invariato.
 
 Contenuto e stato sono assi indipendenti: modificare il copy crea una revisione e non tocca lo stato.
 

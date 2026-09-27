@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
+import { createLocationsRepository } from "../modules/locations/repository.js";
 import type { Db } from "./connection.js";
 
 export const SEED_DIR = fileURLToPath(new URL("../../db/seed/", import.meta.url));
@@ -20,7 +21,6 @@ const locationSchema = z.object({
   region: text,
   country_code: z.string().length(2).default("IT"),
 });
-type LocationInput = z.infer<typeof locationSchema>;
 
 const jobOfferSchema = z.object({
   job_offer_id: z.string().min(1),
@@ -65,41 +65,17 @@ export function seed(db: Db, dir = SEED_DIR): void {
     ON CONFLICT (id) DO NOTHING
   `);
 
+  const locations = createLocationsRepository(db);
   db.transaction(() => {
     db.exec(channelsSql);
     for (const { offer, raw } of offers) {
       const { location, required_skills, ...fields } = offer;
       insertOffer.run({
         ...fields,
-        location_id: findOrCreateLocation(db, location),
+        location_id: locations.findOrCreate(location),
         required_skills: JSON.stringify(required_skills),
         raw,
       });
     }
   })();
-}
-
-// Resta qui finché lo step 6 non introduce il repository delle location.
-function findOrCreateLocation(db: Db, location: LocationInput): number {
-  db.prepare(`
-    INSERT OR IGNORE INTO locations
-      (street_name, street_number, postal_code, locality, province, province_code, region, country_code)
-    VALUES
-      (@street_name, @street_number, @postal_code, @locality, @province, @province_code, @region, @country_code)
-  `).run(location);
-  // Stesse colonne e stesso COALESCE dell'indice locations_unique: NULL e '' sono lo stesso luogo.
-  const id = db
-    .prepare(`
-      SELECT id FROM locations
-      WHERE country_code = @country_code
-        AND COALESCE(region, '')        = COALESCE(@region, '')
-        AND COALESCE(province_code, '') = COALESCE(@province_code, '')
-        AND COALESCE(locality, '')      = COALESCE(@locality, '')
-        AND COALESCE(postal_code, '')   = COALESCE(@postal_code, '')
-        AND COALESCE(street_name, '')   = COALESCE(@street_name, '')
-        AND COALESCE(street_number, '') = COALESCE(@street_number, '')
-    `)
-    .pluck()
-    .get(location) as number;
-  return id;
 }

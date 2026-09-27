@@ -1,17 +1,18 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import Database from "better-sqlite3";
 import { parseSpecs, type ContentTarget, type Format, type Kind } from "@job-ads-engine/content";
+import { openDatabase, type Db } from "../src/db/connection.js";
+import { migrate } from "../src/db/migrate.js";
+import { seed } from "../src/db/seed.js";
 
 /** Percorso di un file del pacchetto api, indipendente dalla cartella di lancio. */
 export const apiPath = (relative: string) => fileURLToPath(new URL(`../${relative}`, import.meta.url));
 
-/** DB in memoria con migrazioni e seed dei canali. */
-export function seededDb() {
-  const db = new Database(":memory:");
-  db.pragma("foreign_keys = ON");
-  db.exec(readFileSync(apiPath("db/migrations/001_init.sql"), "utf8"));
-  db.exec(readFileSync(apiPath("db/seed/001_channels.sql"), "utf8"));
+/** DB in memoria preparato come quello reale: migrazioni e seed. */
+export function seededDb(): Db {
+  const db = openDatabase(":memory:");
+  migrate(db);
+  seed(db);
   return db;
 }
 
@@ -20,7 +21,7 @@ export interface ChannelFormatRow extends ContentTarget {
   aspect_ratio: string | null;
 }
 
-export function channelFormats(db: Database.Database): ChannelFormatRow[] {
+export function channelFormats(db: Db): ChannelFormatRow[] {
   const rows = db
     .prepare(
       `SELECT cf.channel_code, c.kind, cf.format, cf.aspect_ratio, cf.specs

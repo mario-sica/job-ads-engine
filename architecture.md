@@ -29,7 +29,7 @@ Monorepo con npm workspaces: tre pacchetti con responsabilità separate e un sol
 │   │   │   ├── db/          # connessione, migrazioni, seed e CLI db:*
 │   │   │   ├── modules/     # job-offers, channel-formats, locations, ads (repository; routes e service TODO)
 │   │   │   ├── llm/         # proiezione, prompt, client, validazione e retry  (TODO)
-│   │   │   ├── render/      # testo per canale e template HTML per formato     (TODO)
+│   │   │   ├── render/      # formattazione it-IT, testo per kind, HTML di foglio A4 e creative
 │   │   │   └── server.ts    # bootstrap Fastify                                (TODO)
 │   │   └── test/            # integrazione seed ↔ contratto, poi il resto
 │   └── web/                 # UI React + Vite (modulo opzionale)              (TODO)
@@ -126,7 +126,7 @@ content = {
 
 Lo schema Zod si costruisce a runtime da kind, formato e `specs`. Cambiare un limite è un UPDATE, non un deploy.
 
-**Le proporzioni cambiano layout e limiti, non lo schema.** 1:1, 4:5 e 9:16 usano la stessa `Creative`, con template HTML diversi.
+**Le proporzioni cambiano layout e limiti, non lo schema.** 1:1, 4:5 e 9:16 usano la stessa `Creative` e un solo template HTML che si adatta alle dimensioni della tela (in 9:16 i caratteri crescono).
 
 **Due schemi per ogni combinazione:**
 - `llmOutputSchemaFor`: ciò che l'LLM deve produrre, cioè solo le parti generate più `salary_framing`;
@@ -203,7 +203,14 @@ Se un copy esce male, si capisce se la causa è il prompt, il modello o i dati. 
    Se l'output non è conforme, si fa un retry passando gli errori; se fallisce ancora, `502` e nulla salvato. Se il provider non risponde (chiave assente, rete, timeout, rate limit), `503` e nulla salvato.
 5. **Composizione**: `buildFacts(job_offer, salary_framing)` più le parti generate, poi validazione finale con `contentSchemaFor`.
 6. **Persistenza**: annuncio, variante, revisione e puntatore in una sola transazione. Una variante non esiste mai senza contenuto.
-7. **Lettura**: l'API restituisce l'annuncio con il contenuto corrente. Il renderer produce il testo per canale o, per i formati con immagine, l'HTML del template della proporzione. La UI mostra l'anteprima e, per gli edit, valida il contenuto con lo stesso schema del server prima di inviarlo.
+7. **Lettura**: l'API restituisce l'annuncio con il contenuto corrente. Il renderer rilegge il contenuto con `contentSchemaFor` e produce il testo per canale e, per i formati con immagine, un documento HTML autosufficiente con le dimensioni delle `specs`. Luogo e dati deterministici li compone dai `facts` e dall'annuncio:
+   - Indeed: campi strutturati (titolo, azienda, luogo, RAL, contratto, esperienza, competenze) più la descrizione;
+   - WhatsApp: messaggio con `*grassetto*` e una riga `📍 luogo · RAL · contratto`; il foglio A4 aggiunge gli stessi dati come chip;
+   - social: la caption è solo testo generato; la creative mostra i loghi "Gyver × azienda", titolo evidenziato, hook, sottotitolo e il segnaposto della foto, senza RAL né luogo.
+
+   In `JobDescription` la headline fa da titolo della sezione azienda, `role.title` della sezione ruolo; seguono "Quello che ti offrirà l'azienda:", aperta dalla riga RAL, e "Il tuo profilo:".
+
+   La UI mostra l'anteprima e, per gli edit, valida il contenuto con lo stesso schema del server prima di inviarlo.
 
 **Edit manuale**: nuova revisione `manual`, validata con `contentSchemaFor`, e aggiornamento del puntatore.
 

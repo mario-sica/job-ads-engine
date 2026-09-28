@@ -46,7 +46,7 @@ describe("prompt", () => {
 
   it("eccezione per l'angle sul contratto, tono senza contrapposizioni né emoji, titoli semplici", () => {
     const indeed = buildPrompt(format("indeed", "text"), snapshotFor()).system;
-    expect(indeed).toContain("Eccezione: se l'angle punta sul contratto o sulla retribuzione");
+    expect(indeed).toContain("Eccezione: se l'angle punta sul contratto");
     expect(indeed).toContain("non costruire frasi per contrasto");
     expect(indeed).toContain("Niente emoji in nessun campo");
     // Le frasi da evitare non si citano: il modello tendeva a riprodurle.
@@ -55,7 +55,7 @@ describe("prompt", () => {
     expect(indeed).toContain("È una direzione, non un testo da copiare");
     // Il tool use è forzato: il prompt di sistema non nomina lo strumento.
     expect(indeed).not.toContain("submit_ad");
-    expect(buildPrompt(format("instagram", "image", "1:1"), snapshotFor()).system).not.toContain("Eccezione: se l'angle punta sul contratto o sulla retribuzione");
+    expect(buildPrompt(format("instagram", "image", "1:1"), snapshotFor()).system).not.toContain("Eccezione: se l'angle punta sul contratto");
   });
 
   it("azienda e ruolo distinti, con un esempio astratto che non contiene dati reali", () => {
@@ -67,12 +67,11 @@ describe("prompt", () => {
     for (const sector of ["cogenerazione", "biogas", "rinnovabili"]) expect(system).not.toContain(sector);
   });
 
-  it("v9: segnaposto {RAL}, eccezione per contratto o retribuzione, niente età nel testo", () => {
+  it("niente età nel testo e nessun segnaposto per la RAL", () => {
     const indeed = buildPrompt(format("indeed", "text"), snapshotFor()).system;
-    expect(indeed).toContain("scrivi il segnaposto {RAL} dove andrebbe la cifra");
-    expect(indeed).toContain("se l'angle punta sul contratto o sulla retribuzione, un bullet dedicato è ammesso; per la cifra usa {RAL}");
     expect(indeed).toContain("nel testo non indicare l'età di chi legge");
-    expect(buildPrompt(format("instagram", "image", "1:1"), snapshotFor()).system).toContain("citala con {RAL}");
+    expect(indeed).toContain("Eccezione: se l'angle punta sul contratto, un bullet sul contratto è ammesso (mai con le cifre della RAL).");
+    expect(indeed).not.toContain("{RAL}");
   });
 
   it("solo i formati image_text chiedono un testo breve accanto all'immagine", () => {

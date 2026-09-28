@@ -45,6 +45,10 @@ describe("formatSalary", () => {
     expect(plain(formatSalary(salary(framing)))).toBe(expected);
   });
 
+  it("una RAL fissa si scrive come un solo importo", () => {
+    expect(plain(formatSalary({ min: 28000, max: 28000, currency: "EUR", framing: "range" }))).toBe("RAL 28.000 €");
+  });
+
   it("raggruppa anche le cifre a 4 cifre e usa la valuta dei facts", () => {
     expect(plain(formatSalary({ min: 5000, max: null, currency: "EUR", framing: "from" }))).toBe("RAL da 5.000 €");
     expect(plain(formatSalary(salary("up_to", "USD")))).toBe("RAL fino a 38.000 USD");

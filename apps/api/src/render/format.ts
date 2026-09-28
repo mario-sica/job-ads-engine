@@ -33,7 +33,8 @@ export function formatLocation(location: LocationInput, precision: LocationPreci
 export function formatSalaryAmount({ min, max, currency, framing }: Salary): string {
   switch (framing) {
     case "range":
-      return `${numberFormat.format(min!)}–${money(max!, currency)}`;
+      // Una RAL fissa non è un intervallo: "28.000 €", non "28.000–28.000 €".
+      return min === max ? money(max!, currency) : `${numberFormat.format(min!)}–${money(max!, currency)}`;
     case "from":
       return `da ${money(min!, currency)}`;
     case "up_to":

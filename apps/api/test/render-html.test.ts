@@ -72,6 +72,12 @@ describe("creative social", () => {
     expect(positions).toEqual([...positions].sort((a, b) => a - b));
   });
 
+  it("il riquadro del logo si adatta ai nomi lunghi invece di avere una larghezza fissa", () => {
+    const html = renderCreativeHtml(CREATIVE, { ...FACTS, company_name: "Veneta Impianti Elettrici SpA" }, specsOf("instagram", "4:5"));
+    expect(html).toContain("Logo Veneta Impianti Elettrici SpA");
+    expect(html).toMatch(/\.logos \.placeholder \{ min-width: 180px; max-width: 420px;[^}]*overflow: hidden;/);
+  });
+
   it("niente RAL e niente luogo", () => {
     const html = renderCreativeHtml(CREATIVE, FACTS, specsOf("instagram", "1:1"));
     expect(parseAmounts(html)).not.toContain(32000);

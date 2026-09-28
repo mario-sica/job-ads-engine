@@ -140,7 +140,7 @@ Gli step 1–4 committano file **già presenti** nella cartella: rileggili, veri
   - Testo per kind: Indeed (campi + descrizione), WhatsApp (markup `*grassetto*`), caption social.
   - Template HTML per `JobSheet` (A4) e `Creative` (1:1, 4:5, 9:16), con segnaposto per foto e logo e testo sempre escapato.
   - Test.
-- [ ] **8. `feat/llm-generation`**
+- [x] **8. `feat/llm-generation`**
   - Proiezione → `input_snapshot` (con `published_location`, `workplace`, `angle`).
   - Prompt per kind con `PROMPT_VERSION`:
     - istruzioni nel prompt di sistema, dati nel messaggio utente dentro un blocco delimitato (es. `<job_offer>…</job_offer>`);

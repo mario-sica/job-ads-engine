@@ -6,7 +6,7 @@ import type { ChannelFormat } from "../modules/channel-formats/repository.js";
 import type { InputSnapshot } from "./snapshot.js";
 
 /** Salvata su ogni revisione generata: cambia a ogni modifica dei testi qui sotto. */
-export const PROMPT_VERSION = "v8";
+export const PROMPT_VERSION = "v9";
 
 export const TOOL_NAME = "submit_ad";
 
@@ -23,11 +23,11 @@ Fedeltà ai dati. Usa solo informazioni presenti nella job offer, perché ogni f
 
 Azienda e ruolo sono due cose distinte. Le qualifiche dell'azienda (di cosa è leader, i settori in cui opera) vengono solo dalla sua descrizione, e il dominio del ruolo non deve mai entrarci: un'azienda leader in più settori non diventa leader nel settore del ruolo che cerca. Se lo spazio è poco puoi citarne uno solo, scegliendo tra quelli elencati il più generale o il più vicino al ruolo, sempre con le parole della job offer. Per esempio: se l'azienda è leader nei settori X, Y e Z e il ruolo riguarda A, puoi presentarla come leader in X, Y e Z, oppure solo in quello tra X, Y e Z più generale o più vicino ad A; mai come leader in A, se A non è tra i settori elencati.
 
-Retribuzione. Non scrivere cifre della RAL nel testo: il sistema la mostra dai dati verificati, e un numero riscritto a mano rischierebbe di essere sbagliato. Tu scegli solo come presentarla nel campo salary_framing, tra i valori di salary_framings: "range" (da… a…), "from" (a partire da…) o "up_to" (fino a…), quello più coerente con l'angle; null se salary_framings è vuoto.
+Retribuzione. Non scrivere mai le cifre della RAL: il sistema le prende dai dati verificati, e un numero riscritto a mano rischierebbe di essere sbagliato. Scegli come presentarla nel campo salary_framing, tra i valori di salary_framings: "range" (da… a…), "from" (a partire da…) o "up_to" (fino a…), quello più coerente con l'angle; null se salary_framings è vuoto. Se vuoi citare la RAL nel testo, per esempio perché l'angle punta sulla retribuzione, scrivi il segnaposto {RAL} dove andrebbe la cifra: il sistema lo sostituisce con l'importo esatto, già formattato secondo il framing che hai scelto. Usalo solo se salary_framings non è vuoto.
 
 Luogo. Il luogo da mettere in primo piano è published_location. workplace è la sede dell'azienda, da citare solo come fatto aziendale.
 
-Tono. Valorizza l'offerta per ciò che è, con affermazioni dirette e positive: chi legge fa un mestiere tecnico, e qualunque confronto che sminuisce altri lavori, luoghi o persone risulta poco professionale e allontana i candidati. Quindi non costruire frasi per contrasto (del tipo "X, non Y", o con aperture come "niente…" o "basta…"), non usare aggettivi che sottintendono un confronto, come "vero", e non fare insinuazioni su come vanno le cose altrove. Niente emoji in nessun campo: è una scelta editoriale di Gyver.
+Tono. Valorizza l'offerta per ciò che è, con affermazioni dirette e positive: chi legge fa un mestiere tecnico, e qualunque confronto che sminuisce altri lavori, luoghi o persone risulta poco professionale e allontana i candidati. Quindi non costruire frasi per contrasto (del tipo "X, non Y", o con aperture come "niente…" o "basta…"), non usare aggettivi che sottintendono un confronto, come "vero", e non fare insinuazioni su come vanno le cose altrove. L'annuncio si rivolge a chiunque abbia il profilo: nel testo non indicare l'età di chi legge, con parole come "giovane". Niente emoji in nessun campo: è una scelta editoriale di Gyver.
 
 Titoli. Sono il nome del ruolo in forma semplice (per esempio "Tecnico fotovoltaico"), leggibile a colpo d'occhio anche su uno schermo piccolo: sigle tecniche come MT/BT e formule come "Carriera da…" vanno nella descrizione.
 
@@ -51,11 +51,11 @@ const jobDescription = (indent: string) =>
 /** Cosa mostra il sistema accanto al testo: cambia per kind, e con esso cosa il modello può omettere. */
 const FACTS_SHOWN: Record<Kind, string> = {
   job_board:
-    "Contratto, RAL e luogo pubblicato li mostra il sistema nei campi dell'annuncio e nella sezione offerta: niente bullet su contratto o RAL, nemmeno riformulati (per esempio \"Contratto a tempo indeterminato in…\"). Eccezione: se l'angle punta sul contratto, un bullet sul contratto è ammesso (mai con le cifre della RAL).",
+    "Contratto, RAL e luogo pubblicato li mostra il sistema nei campi dell'annuncio e nella sezione offerta: niente bullet su contratto o RAL, nemmeno riformulati (per esempio \"Contratto a tempo indeterminato in…\"). Eccezione: se l'angle punta sul contratto o sulla retribuzione, un bullet dedicato è ammesso; per la cifra usa {RAL}.",
   messaging:
-    "Contratto, RAL e luogo pubblicato li mostra il sistema accanto al tuo testo: niente bullet su contratto o RAL, nemmeno riformulati (per esempio \"Contratto a tempo indeterminato in…\"). Eccezione: se l'angle punta sul contratto, un bullet sul contratto è ammesso (mai con le cifre della RAL). Il luogo puoi citarlo nella frase d'apertura o nel titolo, se rafforza il messaggio.",
+    "Contratto, RAL e luogo pubblicato li mostra il sistema accanto al tuo testo: niente bullet su contratto o RAL, nemmeno riformulati (per esempio \"Contratto a tempo indeterminato in…\"). Eccezione: se l'angle punta sul contratto o sulla retribuzione, un bullet dedicato è ammesso; per la cifra usa {RAL}. Il luogo puoi citarlo nella frase d'apertura o nel titolo, se rafforza il messaggio.",
   social:
-    "Accanto ai post il sistema non mostra contratto né luogo: se sono argomenti forti, citali tu nel testo. La RAL resta fuori dal testo anche qui.",
+    "Accanto ai post il sistema non mostra contratto né luogo: se sono argomenti forti, citali tu nel testo. Neppure la RAL è mostrata: se l'angle punta sulla retribuzione, citala con {RAL}.",
 };
 
 const GUIDE: Record<Kind, Partial<Record<Part, string>>> = {

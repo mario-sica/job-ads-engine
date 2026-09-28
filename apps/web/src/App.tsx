@@ -9,7 +9,7 @@ export function App() {
   const [jobOffers, setJobOffers] = useState<JobOfferSummary[]>([]);
   const [formats, setFormats] = useState<ChannelFormat[]>([]);
   const [filters, setFilters] = useState<AdFilters>({});
-  const [ads, setAds] = useState<Ad[]>([]);
+  const [ads, setAds] = useState<Ad[] | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<unknown>(null);

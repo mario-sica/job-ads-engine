@@ -78,3 +78,4 @@ main { padding: 1rem 1.5rem; overflow-x: auto; }
 .create { display: flex; flex-direction: column; gap: 0.8rem; max-width: 720px; }
 fieldset { border: 1px solid var(--border); border-radius: 6px; display: flex; flex-direction: column; gap: 0.5rem; }
 .location-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.5rem; }
+fieldset > button { align-self: flex-start; }

@@ -113,6 +113,17 @@ export class ApiError extends Error {
   }
 }
 
+/** Testo leggibile di un errore, con l'elenco dei problemi per i 400 e i 422. */
+export function describeError(error: unknown): string {
+  if (!(error instanceof ApiError)) return error instanceof Error ? error.message : String(error);
+  const head = `${error.message} (${error.code})`;
+  if (!Array.isArray(error.details)) return head;
+  const issues = error.details
+    .filter((d): d is { path: string; message: string } => typeof d === "object" && d !== null && "message" in d)
+    .map((d) => `• ${d.path ? `${d.path}: ` : ""}${d.message}`);
+  return [head, ...issues].join("\n");
+}
+
 type Fetch = typeof fetch;
 
 function isErrorBody(value: unknown): value is { error: { code: string; message: string; details?: unknown } } {

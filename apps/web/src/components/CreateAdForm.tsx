@@ -19,7 +19,7 @@ const PRECISION_LABELS: Record<LocationPrecision, string> = {
 
 export function CreateAdForm({ jobOffers, formats, onCreated, onCancel }: Props) {
   const [draft, setDraft] = useState<CreateAdDraft>({
-    jobOfferId: jobOffers[0]?.id ?? "",
+    jobOfferId: "",
     channelFormatId: null,
     customLocation: false,
     location: EMPTY_LOCATION,
@@ -53,6 +53,7 @@ export function CreateAdForm({ jobOffers, formats, onCreated, onCancel }: Props)
       <label className="field">
         Job offer
         <select value={draft.jobOfferId} onChange={(e) => update({ jobOfferId: e.target.value })}>
+          <option value="">Scegli…</option>
           {jobOffers.map((jo) => (
             <option key={jo.id} value={jo.id}>
               {jo.id} · {jo.title} · {jo.company_name}

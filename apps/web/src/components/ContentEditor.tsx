@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { api, ApiError, type ChannelFormat, type Variant } from "../api.js";
+import { api, type ChannelFormat, type Variant } from "../api.js";
 import { editableFields, fromValues, splitLines, toValues, validate, type Field, type FormValues } from "../content-form.js";
 import { ErrorMessage } from "./ErrorMessage.js";
 
@@ -16,12 +16,6 @@ function counter(field: Field, value: string): string | null {
   const range = field.maxItems !== undefined ? ` (${field.minItems ?? 0}–${field.maxItems})` : "";
   const longest = field.maxLength ? ` · riga più lunga ${Math.max(0, ...items.map((i) => i.length))}/${field.maxLength}` : "";
   return `${items.length} elementi${range}${longest}`;
-}
-
-/** 422 del server: stessi percorsi dello schema, mostrati come elenco. */
-function serverIssues(error: unknown): string | null {
-  if (!(error instanceof ApiError) || error.code !== "invalid_content" || !Array.isArray(error.details)) return null;
-  return error.details.map((d: { path?: string; message?: string }) => `${d.path ?? ""}: ${d.message ?? ""}`).join("\n");
 }
 
 export function ContentEditor({ variant, format, readOnly, onSaved }: Props) {
@@ -99,7 +93,7 @@ export function ContentEditor({ variant, format, readOnly, onSaved }: Props) {
           {changed && !valid && <span className="error">Correggi gli errori per salvare.</span>}
         </div>
       )}
-      {serverIssues(error) !== null ? <p className="error">{serverIssues(error)}</p> : <ErrorMessage error={error} />}
+      <ErrorMessage error={error} />
     </div>
   );
 }

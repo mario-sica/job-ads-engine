@@ -2,7 +2,8 @@ import { AD_STATUSES, type Ad, type AdFilters, type ChannelFormat, type JobOffer
 import { adTitle, locationLabel, STATUS_LABELS } from "../labels.js";
 
 interface Props {
-  ads: Ad[];
+  /** null finché la prima risposta non arriva. */
+  ads: Ad[] | null;
   jobOffers: JobOfferSummary[];
   formats: ChannelFormat[];
   filters: AdFilters;
@@ -44,7 +45,9 @@ export function AdList({ ads, jobOffers, formats, filters, onFilters, selectedId
           ))}
         </select>
       </div>
-      {ads.length === 0 ? (
+      {ads === null ? (
+        <p className="muted">Caricamento…</p>
+      ) : ads.length === 0 ? (
         <p className="muted">Nessun annuncio con questi filtri.</p>
       ) : (
         <ul className="ad-list">

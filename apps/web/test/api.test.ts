@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ApiError, createApi } from "../src/api.js";
+import { ApiError, createApi, describeError } from "../src/api.js";
 
 interface Call {
   url: string;
@@ -56,5 +56,22 @@ describe("client dell'API", () => {
       throw new TypeError("fetch failed");
     });
     await expect(api.ads()).rejects.toMatchObject({ status: 0, code: "network_error" });
+  });
+});
+
+describe("descrizione degli errori", () => {
+  it("elenca i problemi di un 400 o di un 422", () => {
+    const error = new ApiError(422, "invalid_content", "contenuto non valido", [
+      { path: "text.headline", message: "troppo lungo" },
+      { path: "", message: "manca facts" },
+    ]);
+    expect(describeError(error)).toBe("contenuto non valido (invalid_content)\n• text.headline: troppo lungo\n• manca facts");
+  });
+
+  it("senza elenco mostra messaggio e codice", () => {
+    expect(describeError(new ApiError(503, "provider_unavailable", "provider non disponibile", { reason: "missing_key" }))).toBe(
+      "provider non disponibile (provider_unavailable)",
+    );
+    expect(describeError(new Error("boom"))).toBe("boom");
   });
 });

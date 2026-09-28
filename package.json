@@ -12,6 +12,8 @@
   ],
   "scripts": {
     "dev": "concurrently --names api,web --prefix-colors blue,green --kill-others \"npm run dev -w @job-ads-engine/api\" \"npm run dev -w @job-ads-engine/web\"",
+    "dev:demo": "npm run dev:demo -w @job-ads-engine/api",
+    "demo:reset": "npm run demo:reset -w @job-ads-engine/api",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "db:reset": "npm run db:reset -w @job-ads-engine/api"

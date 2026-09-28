@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "npm run db:seed && tsx watch src/server.ts",
+    "dev:demo": "tsx src/db/demo-cli.ts dev",
+    "demo:reset": "tsx src/db/demo-cli.ts reset",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p .",
     "db:migrate": "tsx src/db/cli.ts migrate",

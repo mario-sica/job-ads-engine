@@ -1,0 +1,1030 @@
+{
+  "info": {
+    "name": "job-ads-engine",
+    "description": "Tutte le route dell'API di job-ads-engine (backend Fastify, sotto `/api`).\n\n**Uso**\n1. Avvia dalla root della repo con `npm run dev:demo` (API sulla porta 3000, sugli annunci d'esempio).\n2. La demo contiene 14 annunci d'esempio (varianti 1–28), in una copia che si ripristina con `npm run demo:reset`: le variabili puntano all'annuncio 2 / variante 3 (foglio A4 WhatsApp), quindi letture, edit, ripristino e anteprima funzionano subito. *Generazione → Crea annuncio* salva da sé `adId`, `variantId` e `revisionId` del nuovo annuncio.\n\n**Costi**: le richieste della cartella *Generazione* chiamano l'API Anthropic reale (una chiamata per variante). Senza `ANTHROPIC_API_KEY` rispondono `503 provider_unavailable`; tutto il resto funziona.\n\n**Errori**: sempre `{ error: { code, message, details } }` — 400 invalid_input, 404 not_found, 409 invalid_transition / ad_archived, 422 invalid_content, 502 generation_failed, 503 provider_unavailable, 500 internal_error.\n\nSi importa in Postman con *Import* → `postman/job-ads-engine.postman_collection.json` della repo.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api"
+    },
+    {
+      "key": "jobOfferId",
+      "value": "jo_001",
+      "description": "jo_001 = job offer della traccia; jo_101–jo_109 = fittizie (RAL parziale o assente, injection, part-time, senior, descrizione lunga, nessuna esperienza)"
+    },
+    {
+      "key": "channelFormatId",
+      "value": "10",
+      "description": "10 = Instagram image_text 9:16. Elenco completo: GET channel-formats"
+    },
+    {
+      "key": "adId",
+      "value": "2",
+      "description": "Annuncio d'esempio 2: jo_001 su WhatsApp immagine A4 + testo"
+    },
+    {
+      "key": "variantId",
+      "value": "3",
+      "description": "Variante A dell'annuncio 2"
+    },
+    {
+      "key": "revisionId",
+      "value": "3",
+      "description": "Revisione generata della variante 3"
+    },
+    {
+      "key": "manualContent",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Lettura",
+      "description": "Gratis, funzionano anche senza chiave API.",
+      "item": [
+        {
+          "name": "Job offer · elenco",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/job-offers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "job-offers"
+              ]
+            },
+            "description": "Elenco sintetico: solo `id`, `title`, `company_name` e `location`. Il dettaglio completo si legge per id."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Job offer · dettaglio",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/job-offers/{{jobOfferId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "job-offers",
+                "{{jobOfferId}}"
+              ]
+            },
+            "description": "Una job offer completa per id, con luogo annidato e skill come array (il payload originale `raw` non esce). 404 se non esiste."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Formati di canale · elenco",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/channel-formats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "channel-formats"
+              ]
+            },
+            "description": "Le 12 combinazioni pubblicabili (canale × formato × proporzione) con `kind` e `specs`.\n\n| id | canale | formato |\n|---|---|---|\n| 1 | Indeed | text |\n| 2 | WhatsApp | text |\n| 3 | WhatsApp | image A4 |\n| 4 | WhatsApp | image_text A4 |\n| 5 | Instagram | image 1:1 |\n| 6 | Instagram | image 4:5 |\n| 7 | Instagram | image 9:16 |\n| 8 | Instagram | image_text 1:1 |\n| 9 | Instagram | image_text 4:5 |\n| 10 | Instagram | image_text 9:16 |\n| 11 | TikTok | image 9:16 |\n| 12 | TikTok | image_text 9:16 |"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Annunci · elenco con filtri",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ads",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ads"
+              ],
+              "query": [
+                {
+                  "key": "job_offer_id",
+                  "value": "{{jobOfferId}}",
+                  "disabled": true
+                },
+                {
+                  "key": "channel",
+                  "value": "instagram",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "draft",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Annunci dal più recentemente aggiornato. Filtri facoltativi (abilitali nella tab Params): `job_offer_id`, `channel` (indeed, whatsapp, instagram, tiktok), `status` (draft, active, closed, archived)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Annunci · dettaglio",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ads/{{adId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ads",
+                "{{adId}}"
+              ]
+            },
+            "description": "Annuncio con varianti e revisione corrente di ognuna."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Generazione (usa l'API Anthropic)",
+      "description": "Una chiamata LLM per variante, in parallelo (circa 5–10 s ciascuna). Se una variante fallisce non si salva nulla (502/503).",
+      "item": [
+        {
+          "name": "Crea annuncio (2 varianti)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ads",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ads"
+              ]
+            },
+            "description": "Genera annuncio e varianti e li salva in una transazione. Label A, B… assegnate dal sistema. Luogo di default: quello della job offer; precisione di default: `address` per Indeed, `locality` per gli altri.\n\nSalva `adId`, `variantId` (variante A) e `revisionId` nelle variabili della collection.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"job_offer_id\": \"{{jobOfferId}}\",\n  \"channel_format_id\": {{channelFormatId}},\n  \"variants\": [\n    { \"angle\": \"crescita in una multinazionale\" },\n    { \"angle\": \"stabilità: contratto a tempo indeterminato\" }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const ad = pm.response.json();",
+                  "if (ad.id) {",
+                  "  pm.collectionVariables.set(\"adId\", ad.id);",
+                  "  pm.collectionVariables.set(\"variantId\", ad.variants[0].id);",
+                  "  pm.collectionVariables.set(\"revisionId\", ad.variants[0].current_revision.id);",
+                  "  console.log(`adId=${ad.id} variantId=${ad.variants[0].id} revisionId=${ad.variants[0].current_revision.id}`);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crea annuncio con luogo e precisione",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ads",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ads"
+              ]
+            },
+            "description": "Come sopra, con un luogo pubblicato diverso dalla sede e la precisione scelta (`address`, `locality`, `province`). Al modello arriva comunque al massimo la località.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"job_offer_id\": \"{{jobOfferId}}\",\n  \"channel_format_id\": 2,\n  \"location\": {\n    \"locality\": \"Brescia\",\n    \"province\": \"Brescia\",\n    \"province_code\": \"BS\",\n    \"region\": \"Lombardia\"\n  },\n  \"location_precision\": \"locality\",\n  \"variants\": [\n    {\n      \"angle\": null\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const ad = pm.response.json();",
+                  "if (ad.id) {",
+                  "  pm.collectionVariables.set(\"adId\", ad.id);",
+                  "  pm.collectionVariables.set(\"variantId\", ad.variants[0].id);",
+                  "  pm.collectionVariables.set(\"revisionId\", ad.variants[0].current_revision.id);",
+                  "  console.log(`adId=${ad.id} variantId=${ad.variants[0].id} revisionId=${ad.variants[0].current_revision.id}`);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aggiungi variante",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ads/{{adId}}/variants",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ads",
+                "{{adId}}",
+                "variants"
+              ]
+            },
+            "description": "Genera una nuova variante con la prima label libera. 409 se l'annuncio è archiviato. Salva il nuovo `variantId`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"angle\": \"trasferte gestite: indennità e ore di viaggio pagate\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const variant = pm.response.json();",
+                  "if (variant.id) {",
+                  "  pm.collectionVariables.set(\"variantId\", variant.id);",
+                  "  pm.collectionVariables.set(\"revisionId\", variant.current_revision.id);",
+                  "  console.log(`variantId=${variant.id} (label ${variant.label}) revisionId=${variant.current_revision.id}`);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Revisioni",
+      "description": "Le revisioni sono append-only: un edit crea una revisione nuova, un ripristino sposta il puntatore su una esistente.",
+      "item": [
+        {
+          "name": "Storico della variante",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/variants/{{variantId}}/revisions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "variants",
+                "{{variantId}}",
+                "revisions"
+              ]
+            },
+            "description": "Tutte le revisioni della variante, dalla più recente, con `source` (llm/manual), `model`, `prompt_version`, `input_snapshot`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Edit manuale",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/variants/{{variantId}}/revisions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "variants",
+                "{{variantId}}",
+                "revisions"
+              ]
+            },
+            "description": "Nuova revisione `manual`, validata con lo schema del formato (422 se non valida).\n\nLo script *Pre-request* legge il contenuto corrente della variante e cambia un campo (headline, CTA, hook o sottotitolo, secondo il formato): il body usa `{{manualContent}}`. Per un edit tuo, sostituisci il body con `{ \"content\": { …contenuto completo… } }`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": {{manualContent}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const base = pm.collectionVariables.get(\"baseUrl\");",
+                  "const adId = pm.collectionVariables.get(\"adId\");",
+                  "const variantId = Number(pm.collectionVariables.get(\"variantId\"));",
+                  "pm.sendRequest(`${base}/ads/${adId}`, (err, res) => {",
+                  "  if (err) throw err;",
+                  "  const variant = (res.json().variants || []).find((v) => v.id === variantId);",
+                  "  if (!variant) throw new Error(`la variante ${variantId} non appartiene all'annuncio ${adId}: aggiorna le variabili`);",
+                  "  const content = variant.current_revision.content;",
+                  "  if (content.text && content.text.headline) content.text.headline = \"Headline modificata a mano\";",
+                  "  else if (content.text && content.text.cta) content.text.cta = \"CTA modificata a mano\";",
+                  "  else if (content.image && content.image.hook) content.image.hook = \"HOOK MODIFICATO A MANO\";",
+                  "  else if (content.image && content.image.subtitle) content.image.subtitle = \"sottotitolo modificato a mano\";",
+                  "  pm.collectionVariables.set(\"manualContent\", JSON.stringify(content));",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const revision = pm.response.json();",
+                  "if (revision.id) console.log(`nuova revisione ${revision.id} (${revision.source}); revisionId resta ${pm.collectionVariables.get(\"revisionId\")} per provare il ripristino`);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ripristina revisione",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/variants/{{variantId}}/current-revision",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "variants",
+                "{{variantId}}",
+                "current-revision"
+              ]
+            },
+            "description": "Riporta la variante sulla revisione `revisionId` (per default la prima, generata dall'LLM). Non crea copie. 404 se la revisione è di un'altra variante.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"revision_id\": {{revisionId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Anteprima",
+      "description": "Il testo e l'HTML si compongono dal contenuto corrente, dai facts e dal luogo dell'annuncio.",
+      "item": [
+        {
+          "name": "Anteprima · JSON",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/variants/{{variantId}}/preview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "variants",
+                "{{variantId}}",
+                "preview"
+              ]
+            },
+            "description": "`{ text, html }`: `text` ha `body` (e per Indeed i `fields`), `html` è la pagina per i formati con immagine, altrimenti null."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Anteprima · pagina HTML",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/variants/{{variantId}}/preview?as=html",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "variants",
+                "{{variantId}}",
+                "preview"
+              ],
+              "query": [
+                {
+                  "key": "as",
+                  "value": "html"
+                }
+              ]
+            },
+            "description": "La pagina HTML della creative o del foglio A4: guardala nella tab **Preview** della risposta, o apri l'URL nel browser. 400 sui formati solo testo."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Errori (esempi)",
+      "description": "Una richiesta per ogni codice d'errore gestito, tranne 502/503 (dipendono dal provider) e 500.",
+      "item": [
+        {
+          "name": "400 · body non valido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ads",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ads"
+              ]
+            },
+            "description": "Nessuna variante e campo sconosciuto: `details` elenca i campi.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"job_offer_id\": \"{{jobOfferId}}\",\n  \"channel_format_id\": 1,\n  \"variants\": [],\n  \"extra\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 · filtro non valido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ads?status=pubblicato",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ads"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pubblicato"
+                }
+              ]
+            },
+            "description": "Stato inesistente nel filtro."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "404 · annuncio inesistente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ads/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ads",
+                "999999"
+              ]
+            },
+            "description": "Id che non esiste."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "404 · route inesistente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/nulla",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "nulla"
+              ]
+            },
+            "description": "Route che non esiste."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "409 · transizione non ammessa",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ads/{{adId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ads",
+                "{{adId}}"
+              ]
+            },
+            "description": "Nessuno stato torna a `draft`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"draft\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "422 · contenuto non valido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/variants/{{variantId}}/revisions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "variants",
+                "{{variantId}}",
+                "revisions"
+              ]
+            },
+            "description": "Contenuto senza le parti richieste dal formato: `details` elenca i campi. (409 se l'annuncio è archiviato.)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": {\n    \"facts\": {}\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 422\", () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Stato e varianti",
+      "description": "Transizioni ammesse: draft→active, draft→archived, active→closed, closed→active, closed→archived. `archived` è terminale e rende l'annuncio in sola lettura.",
+      "item": [
+        {
+          "name": "Variante · spegni",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/variants/{{variantId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "variants",
+                "{{variantId}}"
+              ]
+            },
+            "description": "Spegne una variante (A/B test) senza toccare l'annuncio.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_active\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Variante · riaccendi",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/variants/{{variantId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "variants",
+                "{{variantId}}"
+              ]
+            },
+            "description": "Riaccende la variante.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Stato → active",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ads/{{adId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ads",
+                "{{adId}}"
+              ]
+            },
+            "description": "Pubblica l'annuncio (da draft o closed).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"active\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Stato → closed",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ads/{{adId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ads",
+                "{{adId}}"
+              ]
+            },
+            "description": "Chiude un annuncio attivo.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"closed\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Stato → archived",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ads/{{adId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ads",
+                "{{adId}}"
+              ]
+            },
+            "description": "Archivia (da draft o closed). Dopo, l'annuncio non si modifica più.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"archived\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

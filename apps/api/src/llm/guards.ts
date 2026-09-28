@@ -11,7 +11,8 @@
  *   che descrive la foto da scegliere e non è testo pubblicato: scelta dello sviluppatore.
  */
 
-const CONTRAST = /[,;:–—-]\s*non\s+\p{L}/iu;
+// Anche con un numero dopo "non": "30 ore, non 40" (giro 10).
+const CONTRAST = /[,;:–—-]\s*non\s+[\p{L}\p{N}]/iu;
 const NEGATIVE_OPENING = /(?:^|[.!?]\s+)(?:niente|basta|addio)\s+\p{L}/iu;
 const IMPLIED_COMPARISON = /\b(?:vero|vera|veri|vere)\b/iu;
 const EMOJI = /[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}]/u;

@@ -10,6 +10,7 @@ describe("guardrail di tono", () => {
     ["apertura in negativo", "Niente scrivania: sopralluoghi e collaudi."],
     ["apertura in negativo dopo un punto", "Si parte presto. Basta ufficio."],
     ["aggettivo che sottintende un confronto", "Cantieri, collaudi, impianti veri"],
+    ["contrapposizione su un numero", "Lavora 30 ore, non 40"],
   ])("segnala %s", (_, text) => {
     expect(findToneIssues({ image: { hook: text } })).toEqual([expect.stringContaining("image.hook: frase costruita per contrasto")]);
   });

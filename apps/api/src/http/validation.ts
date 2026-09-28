@@ -1,8 +1,5 @@
 import type { z } from "zod";
-import type { Issue } from "../errors.js";
-
-export const issuesOf = (error: z.ZodError): Issue[] =>
-  error.issues.map((i) => ({ path: i.path.join("."), message: i.message }));
+import { issuesOf, type Issue } from "../errors.js";
 
 /** Parametri, query o body della richiesta non validi (400). */
 export class InvalidInputError extends Error {

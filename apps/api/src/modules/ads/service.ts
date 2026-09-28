@@ -1,13 +1,15 @@
+import { contentSchemaFor } from "@job-ads-engine/content";
 import type { AppDeps } from "../../app.js";
-import { AdArchivedError } from "../../errors.js";
+import { AdArchivedError, InvalidContentError, issuesOf } from "../../errors.js";
 import { InvalidInputError } from "../../http/validation.js";
 import { generateContent } from "../../llm/generate.js";
+import { renderPreview, type Preview } from "../../render/index.js";
 import { createChannelFormatsRepository } from "../channel-formats/repository.js";
 import { createJobOffersRepository } from "../job-offers/repository.js";
 import { createLocationsRepository, type Location, type LocationInput } from "../locations/repository.js";
 import { createAdsRepository } from "./repository.js";
 import type { AdStatus } from "./status.js";
-import type { AdFilters, AdWithVariants, LocationPrecision, Variant, VariantInput } from "./types.js";
+import type { AdFilters, AdWithVariants, Json, LocationPrecision, Revision, Variant, VariantInput } from "./types.js";
 
 const LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
@@ -34,6 +36,12 @@ export function createAdsService({ db, llm }: AppDeps) {
     const ad = ads.get(adId);
     if (ad.status === "archived") throw new AdArchivedError(adId);
     return ad;
+  }
+
+  /** La variante e il suo annuncio, che non deve essere archiviato. */
+  function editableVariant(variantId: number): { variant: Variant; ad: AdWithVariants } {
+    const variant = ads.getVariant(variantId);
+    return { variant, ad: editableAd(variant.ad_id) };
   }
 
   return {
@@ -81,6 +89,38 @@ export function createAdsService({ db, llm }: AppDeps) {
       const label = LABELS.find((l) => !used.has(l));
       if (!label) throw new InvalidInputError([{ path: "angle", message: "numero massimo di varianti raggiunto" }]);
       return ads.addVariant(adId, { label, angle, revision });
+    },
+
+    setVariantActive(variantId: number, active: boolean): Variant {
+      editableVariant(variantId);
+      return ads.setVariantActive(variantId, active);
+    },
+
+    listRevisions: (variantId: number) => ads.listRevisions(variantId),
+
+    /** Edit manuale: lo stesso schema dell'output salvato, costruito dal formato dell'annuncio. */
+    addManualRevision(variantId: number, content: unknown): Revision {
+      const { ad } = editableVariant(variantId);
+      const parsed = contentSchemaFor(formats.get(ad.channel_format_id)).safeParse(content);
+      if (!parsed.success) throw new InvalidContentError(issuesOf(parsed.error));
+      return ads.addRevision(variantId, { source: "manual", content: parsed.data as Json });
+    },
+
+    restoreRevision(variantId: number, revisionId: number): Variant {
+      editableVariant(variantId);
+      return ads.restoreRevision(variantId, revisionId);
+    },
+
+    preview(variantId: number): Preview {
+      const variant = ads.getVariant(variantId);
+      const ad = ads.get(variant.ad_id);
+      return renderPreview({
+        target: formats.get(ad.channel_format_id),
+        content: variant.current_revision.content,
+        location: withoutId(ad.location),
+        precision: ad.location_precision,
+        jobTitle: jobOffers.get(ad.job_offer_id).title,
+      });
     },
   };
 }

@@ -17,6 +17,9 @@ export interface Issue {
   message: string;
 }
 
+export const issuesOf = (error: { issues: { path: PropertyKey[]; message: string }[] }): Issue[] =>
+  error.issues.map((i) => ({ path: i.path.map(String).join("."), message: i.message }));
+
 /** Contenuto di un edit manuale non valido per il formato dell'annuncio. */
 export class InvalidContentError extends Error {
   readonly issues: Issue[];

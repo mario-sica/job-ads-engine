@@ -12,7 +12,8 @@ import type { Json, RevisionInput } from "../modules/ads/types.js";
 import type { LlmClient, LlmResponse } from "./client.js";
 import { GenerationFailedError } from "./errors.js";
 import { findToneIssues } from "./guards.js";
-import { buildPrompt, PROMPT_VERSION, TOOL_NAME } from "./prompts.js";
+import { targetLength } from "../creative-fit.js";
+import { buildPrompt, PROMPT_VERSION, SOFT_PATHS, TOOL_NAME, wordBudget } from "./prompts.js";
 import { buildInputSnapshot, type SnapshotInput } from "./snapshot.js";
 
 export type LlmRevision = Extract<RevisionInput, { source: "llm" }>;
@@ -28,16 +29,26 @@ const issuesOf = (error: z.ZodError) => error.issues.map((i) => `${i.path.join("
 const valueAt = (input: unknown, path: PropertyKey[]): unknown =>
   path.reduce<unknown>((node, key) => (node !== null && typeof node === "object" ? (node as Record<PropertyKey, unknown>)[key] : undefined), input);
 
+const wordCount = (text: string) => text.trim().split(/\s+/).length;
+
 /**
- * Errori per il retry. Per un testo troppo lungo il modello riceve lunghezza e
- * testo: "max 30" da solo non gli dice di quanto ha sforato né cosa accorciare.
+ * Errori per il retry. Per un testo troppo lungo non basta "massimo 36": il modello
+ * non sa contare i caratteri, taglia una parola e sfora di nuovo, o rimanda lo
+ * stesso testo (giri 1–10 in prompts.md). Riceve quindi il testo, la misura in
+ * caratteri e in parole, e un obiettivo sotto il massimo espresso in parole.
  */
-function retryIssuesOf(error: z.ZodError, input: unknown): string[] {
+function retryIssuesOf(error: z.ZodError, input: unknown, soft: boolean): string[] {
   return error.issues.map((issue) => {
     const path = issue.path.join(".") || "(radice)";
     const value = valueAt(input, issue.path);
     if (issue.code === "too_big" && issue.origin === "string" && typeof value === "string") {
-      return `${path}: ${value.length} caratteri, massimo ${String(issue.maximum)}. Accorcia: "${value}"`;
+      const max = Number(issue.maximum);
+      const target = soft && SOFT_PATHS.has(path) ? targetLength(max) : Math.floor(max * 0.9);
+      return (
+        `${path}: ${value.length} caratteri (${wordCount(value)} parole), massimo ${max}: "${value}". ` +
+        `Riscrivilo da capo con al massimo ${wordBudget(target)} parole (circa ${target} caratteri), ` +
+        "tenendo solo l'informazione più importante: togliere una parola non basta, e un testo uguale viene rifiutato di nuovo."
+      );
     }
     return `${path}: ${issue.message}`;
   });
@@ -48,14 +59,14 @@ function toolUseOf(response: LlmResponse): Anthropic.ToolUseBlock | undefined {
 }
 
 /** Schema dell'output, guardrail RAL e di tono. Un output troncato o senza strumento è non conforme. */
-function check(response: LlmResponse, schema: z.ZodType, salary: Salary | null): Check {
+function check(response: LlmResponse, schema: z.ZodType, salary: Salary | null, soft: boolean): Check {
   const toolUse = toolUseOf(response);
   if (!toolUse) return { ok: false, errors: [`nessuna chiamata allo strumento ${TOOL_NAME}`], toolUseId: null };
 
   const errors: string[] = [];
   if (response.stop_reason === "max_tokens") errors.push("risposta troncata: output incompleto");
   const parsed = schema.safeParse(toolUse.input);
-  if (!parsed.success) errors.push(...retryIssuesOf(parsed.error, toolUse.input));
+  if (!parsed.success) errors.push(...retryIssuesOf(parsed.error, toolUse.input, soft));
   for (const path of findSalaryLeaks(toolUse.input, salary)) {
     errors.push(`${path}: contiene una cifra della RAL, che non va scritta nel testo`);
   }
@@ -106,7 +117,7 @@ export async function generateContent(input: SnapshotInput, client: LlmClient): 
     // Un rifiuto non si corregge ripetendo la stessa richiesta.
     if (response.stop_reason === "refusal") throw new GenerationFailedError(["il modello ha rifiutato la richiesta"]);
 
-    const result = check(response, schema, salary);
+    const result = check(response, schema, salary, input.target.kind === "social");
     if (result.ok) {
       const { salary_framing, ...parts } = result.output;
       const content = contentSchemaFor(input.target).safeParse({ facts: buildFacts(input.jobOffer, salary_framing), ...parts });

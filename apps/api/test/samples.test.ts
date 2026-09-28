@@ -20,6 +20,12 @@ describe("annunci d'esempio", () => {
     expect(new Set(targets.map((t) => t!.format))).toEqual(new Set(["text", "image", "image_text"]));
   });
 
+  it("ogni esempio punta a una job offer del seed, e ogni job offer ne ha almeno uno", () => {
+    const ids = new Set(llmSetup().jobOffers.map((o) => o.id));
+    expect(SAMPLES.every((s) => ids.has(s.jobOffer))).toBe(true);
+    expect(new Set(SAMPLES.map((s) => s.jobOffer))).toEqual(ids);
+  });
+
   it("ogni annuncio ha due angle diversi", () => {
     for (const { angles } of SAMPLES) expect(new Set(angles).size).toBe(2);
   });

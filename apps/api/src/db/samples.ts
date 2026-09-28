@@ -3,40 +3,75 @@ import type { LlmClient } from "../llm/client.js";
 import type { InputSnapshot } from "../llm/snapshot.js";
 
 export interface SampleAd {
+  jobOffer: string;
   channel: string;
   format: "text" | "image" | "image_text";
   aspectRatio: string | null;
-  /** Due angle diversi per annuncio, fattuali (niente contrapposizioni) e sostenuti da dati di jo_001. */
+  /** Due angle diversi per annuncio, fattuali (niente contrapposizioni) e sostenuti dai dati della job offer. */
   angles: [string, string];
 }
 
-export const SAMPLE_JOB_OFFER = "jo_001";
-
-/** Un annuncio per kind, e insieme tutti e tre i formati. */
+/**
+ * jo_001 (la job offer della traccia) su un annuncio per kind e tutti i formati;
+ * le job offer fittizie ciascuna su un formato diverso, per provare casi che
+ * jo_001 non ha: RAL solo minima o assente, apprendistato, dati scarni, injection.
+ */
 export const SAMPLES: SampleAd[] = [
   {
+    jobOffer: "jo_001",
     channel: "indeed",
     format: "text",
     aspectRatio: null,
     angles: ["crescita professionale in una multinazionale", "stabilità: tempo indeterminato e condizioni economiche"],
   },
   {
+    jobOffer: "jo_001",
     channel: "whatsapp",
     format: "image_text",
     aspectRatio: "A4",
     angles: ["proposta diretta a un tecnico FV esperto", "trasferte: indennità, ticket e ore di viaggio pagate"],
   },
   {
+    jobOffer: "jo_001",
     channel: "instagram",
     format: "image",
     aspectRatio: "4:5",
     angles: ["il mestiere sul campo: grandi impianti fotovoltaici", "entrare in una multinazionale delle rinnovabili"],
   },
   {
+    jobOffer: "jo_001",
     channel: "tiktok",
     format: "image_text",
     aspectRatio: "9:16",
     angles: ["lavoro in campo: cantieri, sopralluoghi e collaudi", "un gruppo presente in 20 Paesi"],
+  },
+  {
+    jobOffer: "jo_101",
+    channel: "whatsapp",
+    format: "text",
+    aspectRatio: null,
+    angles: ["retribuzione di partenza e furgone attrezzato", "cantieri in provincia di Bergamo con rientro ogni giorno"],
+  },
+  {
+    jobOffer: "jo_102",
+    channel: "indeed",
+    format: "text",
+    aspectRatio: null,
+    angles: ["competenze su PLC e manutenzione predittiva", "stabilità in un grande stabilimento produttivo"],
+  },
+  {
+    jobOffer: "jo_103",
+    channel: "instagram",
+    format: "image_text",
+    aspectRatio: "1:1",
+    angles: ["imparare il mestiere in apprendistato", "climatizzazione e pompe di calore"],
+  },
+  {
+    jobOffer: "jo_104",
+    channel: "whatsapp",
+    format: "image",
+    aspectRatio: "A4",
+    angles: ["furgone aziendale e corsi di aggiornamento", "impianti civili e domotica KNX"],
   },
 ];
 

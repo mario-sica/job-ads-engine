@@ -6,7 +6,7 @@ import { createAdsService } from "../modules/ads/service.js";
 import { createChannelFormatsRepository } from "../modules/channel-formats/repository.js";
 import { openDatabase } from "./connection.js";
 import { migrate } from "./migrate.js";
-import { SAMPLE_JOB_OFFER, SAMPLES, withAttemptLog } from "./samples.js";
+import { SAMPLES, withAttemptLog } from "./samples.js";
 import { seed } from "./seed.js";
 
 /*
@@ -28,7 +28,7 @@ async function main() {
       (line) => console.log(line),
     );
     const service = createAdsService({ db, llm });
-    const existing = new Set(service.list({ job_offer_id: SAMPLE_JOB_OFFER }).map((ad) => ad.channel_format_id));
+    const existing = new Set(service.list({}).map((ad) => `${ad.job_offer_id}:${ad.channel_format_id}`));
 
     const formats = createChannelFormatsRepository(db).list();
     console.log(`Modello ${config.llmModel} · prompt ${PROMPT_VERSION} · DB ${config.databasePath}\n`);
@@ -39,15 +39,15 @@ async function main() {
         (f) => f.channel_code === sample.channel && f.format === sample.format && f.aspect_ratio === sample.aspectRatio,
       );
       if (!target) throw new Error(`formato ${sample.channel} ${sample.format} ${sample.aspectRatio ?? ""} assente dal seed`);
-      const name = `${target.channel_name} ${target.format}${target.aspect_ratio ? ` ${target.aspect_ratio}` : ""}`;
-      if (existing.has(target.id)) {
+      const name = `${sample.jobOffer} · ${target.channel_name} ${target.format}${target.aspect_ratio ? ` ${target.aspect_ratio}` : ""}`;
+      if (existing.has(`${sample.jobOffer}:${target.id}`)) {
         console.log(`· ${name}: già presente, saltato\n`);
         continue;
       }
       // Un annuncio fallito non ferma gli altri: un giro deve mostrare tutti i problemi.
       try {
         const ad = await service.create({
-          job_offer_id: SAMPLE_JOB_OFFER,
+          job_offer_id: sample.jobOffer,
           channel_format_id: target.id,
           variants: sample.angles.map((angle) => ({ angle })),
         });

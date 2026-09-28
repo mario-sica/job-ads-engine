@@ -1,11 +1,12 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { llmOutputSchemaFor, PARTS_BY_FORMAT, type Kind, type Part } from "@job-ads-engine/content";
 import { z } from "zod";
+import { targetLength } from "../creative-fit.js";
 import type { ChannelFormat } from "../modules/channel-formats/repository.js";
 import type { InputSnapshot } from "./snapshot.js";
 
 /** Salvata su ogni revisione generata: cambia a ogni modifica dei testi qui sotto. */
-export const PROMPT_VERSION = "v5";
+export const PROMPT_VERSION = "v6";
 
 export const TOOL_NAME = "submit_ad";
 
@@ -74,7 +75,7 @@ const GUIDE: Record<Kind, Partial<Record<Part, string>>> = {
   - cta: un invito all'azione breve;
   - hashtags: pertinenti al ruolo e al settore, senza spazi.`,
     image: `image: il testo della creative (immagine con foto di un tecnico).
-  - title.text: il nome del ruolo in forma semplice; title.highlight: la parola chiave da evidenziare, copiata identica da title.text;
+  - title.text: il nome del ruolo in forma semplice; title.highlight: la parola chiave da evidenziare, copiata identica da title.text (se cambi il titolo, ricopiala dal nuovo);
   - hook: la frase d'impatto che ferma lo scroll;
   - subline: un dettaglio concreto che rende credibile l'offerta;
   - visual_brief: la foto ideale da scegliere dall'archivio (persona, contesto, abbigliamento), coerente con il ruolo e senza testo nell'immagine.`,
@@ -90,13 +91,23 @@ type JsonSchemaNode = {
 };
 
 // In italiano una parola occupa in media circa 7 caratteri, spazio compreso.
-const chars = (max: number) => `al massimo ${max} caratteri (circa ${Math.max(1, Math.round(max / 7))} parole)`;
+const words = (n: number) => `circa ${Math.max(1, Math.round(n / 7))} parole`;
+const chars = (max: number) => `al massimo ${max} caratteri (${words(max)})`;
+
+/** Campi della creative con limite morbido: si chiede l'obiettivo, il massimo resta la soglia di rifiuto. */
+const SOFT_PATHS = new Set(["image.title.text", "image.hook", "image.subline"]);
+const softChars = (max: number) => {
+  const target = targetLength(max);
+  return `punta a ${target} caratteri (${words(target)}); oltre ${max} il testo viene rifiutato`;
+};
 
 /** I limiti letti dallo schema dell'output: una sola fonte per strumento e prompt. */
-function describeLimits(node: JsonSchemaNode, path: string[] = []): string[] {
+function describeLimits(node: JsonSchemaNode, soft: boolean, path: string[] = []): string[] {
   const name = path.join(".");
   const lines: string[] = [];
-  if (node.maxLength !== undefined) lines.push(`- ${name}: ${chars(node.maxLength)}`);
+  if (node.maxLength !== undefined) {
+    lines.push(`- ${name}: ${soft && SOFT_PATHS.has(name) ? softChars(node.maxLength) : chars(node.maxLength)}`);
+  }
   if (node.minItems !== undefined || node.maxItems !== undefined) {
     const itemMax = node.items?.maxLength;
     lines.push(
@@ -104,7 +115,7 @@ function describeLimits(node: JsonSchemaNode, path: string[] = []): string[] {
         (itemMax !== undefined ? `, ciascuno ${chars(itemMax)}` : ""),
     );
   }
-  for (const [key, child] of Object.entries(node.properties ?? {})) lines.push(...describeLimits(child, [...path, key]));
+  for (const [key, child] of Object.entries(node.properties ?? {})) lines.push(...describeLimits(child, soft, [...path, key]));
   return lines;
 }
 
@@ -140,7 +151,7 @@ ${parts.join("\n\n")}
 L'angle della variante è nel campo angle: orienta la scelta dei contenuti e il tono. Se è null, punta sull'argomento più forte della job offer.
 
 Limiti:
-${describeLimits(schema as JsonSchemaNode).join("\n")}`;
+${describeLimits(schema as JsonSchemaNode, target.kind === "social").join("\n")}`;
 
   return {
     system,

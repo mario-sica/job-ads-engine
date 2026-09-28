@@ -97,13 +97,15 @@ Il tempo in più è andato soprattutto ad **affinare i prompt**, per una generaz
 - Le varianti di un annuncio si generano in parallelo: se una fallisce non si salva nulla, ma la chiamata dell'altra è già stata pagata.
 - Il ripristino sposta il puntatore su una revisione esistente: lo storico non registra quando è avvenuto.
 - SQLite con un solo processo che scrive: adatto a questo servizio, non a più istanze dell'API.
+- Le job offer si aggiungono da file JSON con un comando (`npm run db:seed`), senza riavviare l'app ma non da soli: la lista si aggiorna solo quando qualcuno lancia il seed. Una job offer già caricata non si aggiorna dal file, perché gli annunci generati si basano su quei dati: per cambiarla serve un nuovo id o `db:reset`.
 
 ## Con un giorno in più (in ordine di priorità)
 
 1. **Verifica di tutti i numeri** del testo generato contro l'input (grounding numerico), oltre alla sola RAL.
-2. **Export PNG delle creative** (HTML → immagine), per pubblicarle davvero.
-3. **Libreria di asset** per risolvere `visual_brief` in una foto, e logo aziendale nei dati.
-4. **Metriche per variante**, per chiudere il ciclo dell'A/B test.
-5. **Log dei tentativi di generazione falliti**, oggi visibili solo nel registro dello script degli esempi.
-6. **`parent_revision_id` e storico dei cambi di stato**, per sapere da quale revisione nasce un edit e chi ha cambiato cosa.
-7. **Un template per proporzione** per le creative.
+2. **Caricamento continuo delle job offer.** Oggi una job offer nuova richiede di lanciare il seed a mano. Il passo successivo è un processo sempre attivo (un watcher nell'API o un daemon separato) che osserva i file `db/seed/job_offers*.json` e applica il seed a ogni modifica, così la lista delle job offer disponibili si aggiorna senza comandi né riavvii. In produzione lo stesso ruolo spetterebbe all'integrazione con il sistema che possiede le job offer (un evento o un'API), non a un file.
+3. **Export PNG delle creative** (HTML → immagine), per pubblicarle davvero.
+4. **Libreria di asset** per risolvere `visual_brief` in una foto, e logo aziendale nei dati.
+5. **Metriche per variante**, per chiudere il ciclo dell'A/B test.
+6. **Log dei tentativi di generazione falliti**, oggi visibili solo nel registro dello script degli esempi.
+7. **`parent_revision_id` e storico dei cambi di stato**, per sapere da quale revisione nasce un edit e chi ha cambiato cosa.
+8. **Un template per proporzione** per le creative.

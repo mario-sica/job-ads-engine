@@ -81,7 +81,7 @@ In più, `ad_variants.current_revision_id` punta alla revisione corrente della v
 
 ### Concetti
 
-**Job offer.** È l'input interno: denso e non pubblicabile. Per questo servizio è read-only, perché arriva da altre entità; qui è seedata. Le colonne sono una proiezione del payload, che resta integro in `raw`. Il seed legge tutti i file `db/seed/job_offers*.json`: `job_offers.json` è la job offer della traccia, invariata; `job_offers.fictional.json` ne contiene quattro inventate per provare la generazione su casi che `jo_001` non ha (RAL solo minima, assente o solo massima, apprendistato, dati scarni, un tentativo di prompt injection).
+**Job offer.** È l'input interno: denso e non pubblicabile. Per questo servizio è read-only, perché arriva da altre entità; qui è seedata. Le colonne sono una proiezione del payload, che resta integro in `raw`. Il seed legge tutti i file `db/seed/job_offers*.json`: `job_offers.json` è la job offer della traccia, invariata; `job_offers.fictional.json` ne contiene nove inventate per provare la generazione su casi che `jo_001` non ha (RAL solo minima, assente o solo massima, apprendistato, dati scarni, un tentativo di prompt injection, part-time, ruolo senior, descrizione lunga, nessuna esperienza, sedi al Centro-Sud). Chi usa l'app ne aggiunge altre con un proprio file `job_offers*.json` (procedura nel readme). Il seed valida ogni job offer con il suo schema e con `factsSchema` del contratto: una job offer non valida si scarta con un avviso che nomina file, id e campo, senza bloccare le altre né l'avvio. Una job offer già caricata non si aggiorna; se il file è cambiato, il seed lo segnala.
 
 **Canale e formato.**
 - `channels` descrive la piattaforma e il suo `kind` (`job_board`, `messaging`, `social`).

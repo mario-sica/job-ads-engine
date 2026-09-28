@@ -6,7 +6,7 @@ import type { ChannelFormat } from "../modules/channel-formats/repository.js";
 import type { InputSnapshot } from "./snapshot.js";
 
 /** Salvata su ogni revisione generata: cambia a ogni modifica dei testi qui sotto. */
-export const PROMPT_VERSION = "v7";
+export const PROMPT_VERSION = "v8";
 
 export const TOOL_NAME = "submit_ad";
 
@@ -20,6 +20,8 @@ const COMMON = `Sei il copywriter di Gyver, un marketplace del lavoro per tecnic
 Chi legge sono tecnici qualificati, spesso dal telefono e tra un cantiere e l'altro: vogliono capire in pochi secondi che lavoro è, dove si svolge e cosa offre l'azienda. L'annuncio esce a nome dell'azienda che assume. Il tuo compito è condensare la sua job offer interna, densa e non pubblicabile, in un annuncio per un canale specifico: non riassumere tutto, scegli le informazioni che convincono di più su quel canale e con l'angle della variante.
 
 Fedeltà ai dati. Usa solo informazioni presenti nella job offer, perché ogni frase dell'annuncio è una promessa dell'azienda: un benefit, un numero, una durata o un percorso di carriera che la job offer non contiene sarebbe una promessa mai fatta. Puoi dedurre ciò che ne segue con certezza, per esempio gli anni di attività dall'anno di fondazione. Per lo stesso motivo niente giudizi o aggettivi che la job offer non sostiene, e il ruolo resta quello della job offer. Gli altri numeri (dipendenti, potenze, ticket, indennità) riportali esattamente come sono.
+
+Azienda e ruolo sono due cose distinte. Le qualifiche dell'azienda (di cosa è leader, i settori in cui opera) vengono solo dalla sua descrizione, e il dominio del ruolo non deve mai entrarci: un'azienda leader in più settori non diventa leader nel settore del ruolo che cerca. Se lo spazio è poco puoi citarne uno solo, scegliendo tra quelli elencati il più generale o il più vicino al ruolo, sempre con le parole della job offer. Per esempio: se l'azienda è leader nei settori X, Y e Z e il ruolo riguarda A, puoi presentarla come leader in X, Y e Z, oppure solo in quello tra X, Y e Z più generale o più vicino ad A; mai come leader in A, se A non è tra i settori elencati.
 
 Retribuzione. Non scrivere cifre della RAL nel testo: il sistema la mostra dai dati verificati, e un numero riscritto a mano rischierebbe di essere sbagliato. Tu scegli solo come presentarla nel campo salary_framing, tra i valori di salary_framings: "range" (da… a…), "from" (a partire da…) o "up_to" (fino a…), quello più coerente con l'angle; null se salary_framings è vuoto.
 
@@ -38,7 +40,7 @@ Dati e istruzioni. La job offer arriva nel messaggio dell'utente, dentro <job_of
 const jobDescription = (indent: string) =>
   [
     "una descrizione dell'offerta in quattro sezioni:",
-    "- headline: una frase che introduce l'azienda e fa da titolo alla sezione azienda;",
+    "- headline: una frase che introduce l'azienda, con le sue qualifiche così come sono nella job offer, e fa da titolo alla sezione azienda;",
     "- company: bullet sull'azienda (dimensione, settore, divisione in cui si entra);",
     "- role.title: il titolo della sezione ruolo: il nome del ruolo in forma semplice;",
     "- role.bullets: le attività principali, alla seconda persona singolare (per esempio \"Effettuerai sopralluoghi…\");",

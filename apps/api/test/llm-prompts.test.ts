@@ -58,6 +58,15 @@ describe("prompt", () => {
     expect(buildPrompt(format("instagram", "image", "1:1"), snapshotFor()).system).not.toContain("Eccezione: se l'angle punta sul contratto");
   });
 
+  it("azienda e ruolo distinti, con un esempio astratto che non contiene dati reali", () => {
+    const { system } = buildPrompt(format("indeed", "text"), snapshotFor());
+    expect(system).toContain("Azienda e ruolo sono due cose distinte.");
+    expect(system).toContain("mai come leader in A, se A non è tra i settori elencati");
+    expect(system).toContain("con le sue qualifiche così come sono nella job offer");
+    // L'esempio non deve suggerire la risposta per jo_001, che serve a verificare la regola.
+    for (const sector of ["cogenerazione", "biogas", "rinnovabili"]) expect(system).not.toContain(sector);
+  });
+
   it("solo i formati image_text chiedono un testo breve accanto all'immagine", () => {
     const hint = "il testo resta breve";
     expect(buildPrompt(format("whatsapp", "image_text", "A4"), snapshotFor()).system).toContain(hint);

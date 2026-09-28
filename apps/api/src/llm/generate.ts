@@ -24,6 +24,24 @@ const MAX_ATTEMPTS = 2;
 
 const issuesOf = (error: z.ZodError) => error.issues.map((i) => `${i.path.join(".") || "(radice)"}: ${i.message}`);
 
+const valueAt = (input: unknown, path: PropertyKey[]): unknown =>
+  path.reduce<unknown>((node, key) => (node !== null && typeof node === "object" ? (node as Record<PropertyKey, unknown>)[key] : undefined), input);
+
+/**
+ * Errori per il retry. Per un testo troppo lungo il modello riceve lunghezza e
+ * testo: "max 30" da solo non gli dice di quanto ha sforato né cosa accorciare.
+ */
+function retryIssuesOf(error: z.ZodError, input: unknown): string[] {
+  return error.issues.map((issue) => {
+    const path = issue.path.join(".") || "(radice)";
+    const value = valueAt(input, issue.path);
+    if (issue.code === "too_big" && issue.origin === "string" && typeof value === "string") {
+      return `${path}: ${value.length} caratteri, massimo ${String(issue.maximum)}. Accorcia: "${value}"`;
+    }
+    return `${path}: ${issue.message}`;
+  });
+}
+
 function toolUseOf(response: LlmResponse): Anthropic.ToolUseBlock | undefined {
   return response.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use" && b.name === TOOL_NAME);
 }
@@ -36,7 +54,7 @@ function check(response: LlmResponse, schema: z.ZodType, salary: Salary | null):
   const errors: string[] = [];
   if (response.stop_reason === "max_tokens") errors.push("risposta troncata: output incompleto");
   const parsed = schema.safeParse(toolUse.input);
-  if (!parsed.success) errors.push(...issuesOf(parsed.error));
+  if (!parsed.success) errors.push(...retryIssuesOf(parsed.error, toolUse.input));
   for (const path of findSalaryLeaks(toolUse.input, salary)) {
     errors.push(`${path}: contiene una cifra della RAL, che non va scritta nel testo`);
   }

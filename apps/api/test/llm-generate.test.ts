@@ -79,7 +79,7 @@ describe("generazione", () => {
     expect(retry.messages[1]).toMatchObject({ role: "assistant" });
     const [result] = lastUserContent(retry);
     expect(result).toMatchObject({ type: "tool_result", tool_use_id: "toolu_first", is_error: true });
-    expect(result!.content).toContain("image.hook");
+    expect(result!.content).toContain('image.hook: 48 caratteri, massimo 30. Accorcia: "UN HOOK DECISAMENTE TROPPO LUNGO PER UN QUADRATO"');
   });
 
   it("doppio fallimento: GenerationFailedError con l'elenco degli errori", async () => {

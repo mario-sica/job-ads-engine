@@ -120,4 +120,12 @@ npm run typecheck
 
 ## Modulo opzionale (UI)
 
-`TODO`
+`npm run dev` avvia anche l'interfaccia su `http://localhost:5173`. È volutamente essenziale, come consente la traccia: una sola pagina con l'elenco a sinistra e il dettaglio a destra.
+
+- **Elenco**: filtri per job offer, canale e stato; per ogni annuncio canale, formato, luogo e stato.
+- **Nuovo annuncio**: job offer, canale e formato, luogo pubblicato (quello della job offer o un altro) con la sua precisione, da 1 a 4 angle, uno per variante. *Genera annuncio* chiama l'LLM e richiede qualche decina di secondi; senza chiave API compare il messaggio del `503`.
+- **Dettaglio**: stato con le sole transizioni ammesse, varianti (attiva o disattiva, nuova variante con il suo angle), anteprima del testo per il canale e dell'immagine.
+- **Modifica del contenuto**: un campo per ogni testo generato, una riga per elemento nelle liste, contatore sul limite del formato. La validazione usa lo stesso schema del server (`packages/content`) prima dell'invio; *Salva* crea una revisione manuale. I `facts` (RAL, contratto, esperienza, competenze) sono dati della job offer e nella UI restano in sola lettura; l'API accetta comunque il contenuto completo.
+- **Storico**: le revisioni della variante, generate o manuali, con il contenuto e il ripristino di una precedente.
+
+Un annuncio archiviato si consulta ma non si modifica.

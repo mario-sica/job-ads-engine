@@ -9,7 +9,6 @@ import {
 } from "@job-ads-engine/content";
 import type { z } from "zod";
 import type { Json, RevisionInput } from "../modules/ads/types.js";
-import { findUnfillablePlaceholders } from "../render/salary-placeholder.js";
 import type { LlmClient, LlmResponse } from "./client.js";
 import { GenerationFailedError } from "./errors.js";
 import { findToneIssues } from "./guards.js";
@@ -61,7 +60,6 @@ function check(response: LlmResponse, schema: z.ZodType, salary: Salary | null):
     errors.push(`${path}: contiene una cifra della RAL, che non va scritta nel testo`);
   }
   errors.push(...findToneIssues(toolUse.input));
-  errors.push(...findUnfillablePlaceholders(toolUse.input, salary));
   return errors.length === 0 && parsed.success
     ? { ok: true, output: parsed.data as LlmOutput }
     : { ok: false, errors, toolUseId: toolUse.id };

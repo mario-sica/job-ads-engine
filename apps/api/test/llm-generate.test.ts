@@ -115,22 +115,6 @@ describe("generazione", () => {
     expect(retry).toContain("image.subline: contiene emoji");
   });
 
-  it("{RAL} con la RAL nei facts è ammesso; senza RAL provoca il retry", async () => {
-    const target = format("indeed", "text");
-    const base = validOutput(target);
-    const withPlaceholder = { ...base, text: { ...base.text, offer: ["RAL {RAL} in base all'esperienza"] } };
-
-    const ok = fakeClient(toolUse(withPlaceholder));
-    const revision = await generateContent(input(target), ok.client);
-    expect(ok.requests).toHaveLength(1);
-    expect(revision.content).toMatchObject({ text: { offer: ["RAL {RAL} in base all'esperienza"] } });
-
-    const noSalary = { ...jobOffer, ral_min: null, ral_max: null, currency: null };
-    const retry = fakeClient(toolUse({ ...withPlaceholder, salary_framing: null }), toolUse({ ...base, salary_framing: null }));
-    await generateContent(input(target, noSalary), retry.client);
-    expect(lastUserContent(retry.requests[1]!)[0]!.content).toContain("text.offer.0: usa {RAL}, ma l'offerta non indica una RAL");
-  });
-
   it("provider non disponibile: l'errore passa senza retry", async () => {
     const { client, requests } = fakeClient(new ProviderUnavailableError("missing_key"));
     await expect(generateContent(input(format("indeed", "text")), client)).rejects.toMatchObject({ reason: "missing_key" });

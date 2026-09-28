@@ -1,0 +1,28 @@
+{
+  "name": "@job-ads-engine/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npm run db:seed && tsx watch src/server.ts",
+    "dev:demo": "tsx src/db/demo-cli.ts dev",
+    "demo:reset": "tsx src/db/demo-cli.ts reset",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p .",
+    "db:migrate": "tsx src/db/cli.ts migrate",
+    "db:seed": "tsx src/db/cli.ts seed",
+    "db:reset": "tsx src/db/cli.ts reset",
+    "samples": "tsx src/db/samples-cli.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
+    "@job-ads-engine/content": "*",
+    "better-sqlite3": "^12.11.1",
+    "fastify": "^5.12.5",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "tsx": "^4.23.15"
+  }
+}

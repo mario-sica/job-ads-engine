@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Tecnico Fotovoltaico</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #e8e8e8; display: flex; justify-content: center; padding: 24px 0; }
+.canvas {
+  position: relative; overflow: hidden; background: #fff; color: #1b1b1b;
+  width: 1080px; height: 1080px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.placeholder {
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  border: 3px dashed #9aa0a6; color: #5f6368; background: #f1f3f4;
+}
+
+.creative { display: flex; flex-direction: column; gap: 28px; padding: 64px; height: 100%; }
+.logos { display: flex; align-items: center; gap: 18px; font-size: 22px; }
+/* Il riquadro si allarga con il nome dell'azienda e lo manda a capo: un nome lungo non esce dal bordo. */
+.logos .placeholder { min-width: 180px; max-width: 420px; height: 72px; padding: 0 16px; line-height: 1.15; overflow: hidden; }
+.logos .times { font-size: 36px; color: #5f6368; }
+.title { font-size: calc(84px * var(--fit, 1)); line-height: 1.2; }
+.title mark { background: #ffd600; color: inherit; padding: 0 8px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.hook { font-size: calc(44px * var(--fit, 1)); font-weight: 800; text-transform: uppercase; color: #1848a0; }
+.subline { font-size: calc(34px * var(--fit, 1)); color: #4a4a4a; }
+.photo { flex: 1; min-height: 0; border-radius: 24px; font-size: 26px; padding: 32px; }
+.tall .title { font-size: calc(104px * var(--fit, 1)); }
+.tall .hook { font-size: calc(56px * var(--fit, 1)); }
+.tall .subline { font-size: calc(40px * var(--fit, 1)); }
+
+</style>
+</head>
+<body>
+<div class="canvas">
+<div class="creative">
+<div class="logos">
+  <div class="placeholder">Logo Gyver</div><span class="times">×</span><div class="placeholder">Logo AB Group SpA</div>
+</div>
+<h1 class="title">Tecnico <mark>Fotovoltaico</mark></h1>
+<p class="hook">ENTRA IN UNA MULTINAZIONALE</p>
+<p class="subline">Impianti FV &gt;100 kW</p>
+<div class="placeholder photo">Foto: Tecnico con casco e giacca ad alta visibilità davanti a un impianto fotovoltaico.</div>
+</div>
+</div>
+</body>
+</html>

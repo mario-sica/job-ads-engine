@@ -1,9 +1,11 @@
 node_modules/
+.idea/
 dist/
 .env
 .claude/settings.local.json
 
-# SQLite: apps/api/data/gyver.db è versionato, i file temporanei no
+# SQLite: il DB di lavoro e la copia della demo si creano all'avvio; è versionato solo demo_db/gyver.db
+apps/api/data/
 *.db-journal
 *.db-wal
 *.db-shm

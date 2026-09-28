@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api, type Ad, type AdFilters, type ChannelFormat, type JobOfferSummary } from "./api.js";
 import { AdDetail } from "./components/AdDetail.js";
 import { AdList } from "./components/AdList.js";
+import { CreateAdForm } from "./components/CreateAdForm.js";
 import { ErrorMessage } from "./components/ErrorMessage.js";
 
 export function App() {
@@ -10,6 +11,7 @@ export function App() {
   const [filters, setFilters] = useState<AdFilters>({});
   const [ads, setAds] = useState<Ad[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [creating, setCreating] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [listVersion, setListVersion] = useState(0);
 
@@ -30,6 +32,9 @@ export function App() {
     <div className="layout">
       <header>
         <h1>Gyver · Annunci</h1>
+        <button className="primary" onClick={() => setCreating(true)}>
+          + Nuovo annuncio
+        </button>
       </header>
       <aside>
         <ErrorMessage error={error} />
@@ -40,11 +45,25 @@ export function App() {
           filters={filters}
           onFilters={setFilters}
           selectedId={selectedId}
-          onSelect={setSelectedId}
+          onSelect={(id) => {
+            setCreating(false);
+            setSelectedId(id);
+          }}
         />
       </aside>
       <main>
-        {selectedId === null ? (
+        {creating ? (
+          <CreateAdForm
+            jobOffers={jobOffers}
+            formats={formats}
+            onCancel={() => setCreating(false)}
+            onCreated={(id) => {
+              setCreating(false);
+              setSelectedId(id);
+              setListVersion((v) => v + 1);
+            }}
+          />
+        ) : selectedId === null ? (
           <p className="muted">Seleziona un annuncio dall'elenco.</p>
         ) : (
           <AdDetail key={selectedId} adId={selectedId} formats={formats} onChanged={() => setListVersion((v) => v + 1)} />

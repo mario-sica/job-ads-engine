@@ -34,7 +34,7 @@ describe("repository dei formati di canale", () => {
     const formats = createChannelFormatsRepository(seededDb()).list();
     expect(formats).toHaveLength(12);
     const vertical = formats.find((f) => f.channel_code === "instagram" && f.format === "image" && f.aspect_ratio === "9:16");
-    expect(vertical).toMatchObject({ channel_name: "Instagram", kind: "social", specs: { limits: { image: { hook_max: 40 } } } });
+    expect(vertical).toMatchObject({ channel_name: "Instagram", kind: "social", specs: { limits: { image: { title_max: 36, hook_max: 48, subline_max: 36 } } } });
   });
 
   it("ogni formato è un ContentTarget valido", () => {

@@ -25,9 +25,9 @@ describe("prompt", () => {
     },
   );
 
-  it("i limiti della riga entrano nel prompt: l'hook del 9:16 arriva a 40", () => {
-    expect(buildPrompt(format("instagram", "image", "9:16"), snapshotFor()).system).toContain("- image.hook: al massimo 40 caratteri (circa 6 parole)");
-    expect(buildPrompt(format("instagram", "image", "1:1"), snapshotFor()).system).toContain("- image.hook: al massimo 30 caratteri (circa 4 parole)");
+  it("i limiti della riga entrano nel prompt: l'hook del 9:16 arriva a 48", () => {
+    expect(buildPrompt(format("instagram", "image", "9:16"), snapshotFor()).system).toContain("- image.hook: al massimo 48 caratteri (circa 7 parole)");
+    expect(buildPrompt(format("instagram", "image", "1:1"), snapshotFor()).system).toContain("- image.hook: al massimo 36 caratteri (circa 5 parole)");
     expect(buildPrompt(format("whatsapp", "text"), snapshotFor()).system).toContain("- text.bullets: da 3 a 6 elementi, ciascuno al massimo 120 caratteri (circa 17 parole)");
   });
 

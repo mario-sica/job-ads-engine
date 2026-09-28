@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, NEXT_STATUSES, type AdStatus, type AdWithVariants, type ChannelFormat } from "../api.js";
 import { formatLabel, locationLabel, STATUS_LABELS } from "../labels.js";
+import { ContentEditor } from "./ContentEditor.js";
 import { ErrorMessage } from "./ErrorMessage.js";
 import { Preview } from "./Preview.js";
 
@@ -125,6 +126,15 @@ export function AdDetail({ adId, formats, onChanged }: Props) {
           </div>
           <h3>Anteprima</h3>
           <Preview variant={variant} format={format} />
+          <h3>Modifica del contenuto</h3>
+          {/* La key riparte dalla revisione corrente dopo ogni salvataggio o ripristino. */}
+          <ContentEditor
+            key={variant.current_revision.id}
+            variant={variant}
+            format={format}
+            readOnly={readOnly}
+            onSaved={() => load().then(onChanged)}
+          />
         </div>
       )}
     </div>

@@ -61,3 +61,10 @@ main { padding: 1rem 1.5rem; overflow-x: auto; }
 .preview-text dl div { display: flex; gap: 0.5rem; }
 .preview-text dt { font-weight: 600; min-width: 80px; }
 .preview-text dd { margin: 0; }
+
+.editor { display: flex; flex-direction: column; gap: 0.7rem; }
+.editor details pre { background: var(--bg); padding: 0.6rem; border-radius: 6px; font-size: 0.8rem; overflow-x: auto; }
+.field { display: flex; flex-direction: column; gap: 0.25rem; }
+.field-head { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.85rem; }
+.field.invalid input, .field.invalid textarea { border-color: var(--error); }
+.field .error { font-size: 0.85rem; }

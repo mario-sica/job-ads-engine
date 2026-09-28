@@ -6,7 +6,7 @@ export interface SampleAd {
   channel: string;
   format: "text" | "image" | "image_text";
   aspectRatio: string | null;
-  /** Due angle diversi per annuncio, tutti sostenuti da dati presenti in jo_001. */
+  /** Due angle diversi per annuncio, fattuali (niente contrapposizioni) e sostenuti da dati di jo_001. */
   angles: [string, string];
 }
 
@@ -24,7 +24,7 @@ export const SAMPLES: SampleAd[] = [
     channel: "whatsapp",
     format: "image_text",
     aspectRatio: "A4",
-    angles: ["proposta diretta a un tecnico FV esperto", "trasferte gestite: indennità, ticket, ore di viaggio pagate"],
+    angles: ["proposta diretta a un tecnico FV esperto", "trasferte: indennità, ticket e ore di viaggio pagate"],
   },
   {
     channel: "instagram",
@@ -36,7 +36,7 @@ export const SAMPLES: SampleAd[] = [
     channel: "tiktok",
     format: "image_text",
     aspectRatio: "9:16",
-    angles: ["lavoro sul campo, non in ufficio", "un gruppo presente in 20 Paesi"],
+    angles: ["lavoro in campo: cantieri, sopralluoghi e collaudi", "un gruppo presente in 20 Paesi"],
   },
 ];
 

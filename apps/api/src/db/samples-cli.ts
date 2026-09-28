@@ -49,6 +49,7 @@ async function main() {
         const ad = await service.create({
           job_offer_id: sample.jobOffer,
           channel_format_id: target.id,
+          location: sample.location,
           variants: sample.angles.map((angle) => ({ angle })),
         });
         console.log(`→ annuncio ${ad.id} (${name}): varianti ${ad.variants.map((v) => `${v.label}=${v.id}`).join(", ")}\n`);

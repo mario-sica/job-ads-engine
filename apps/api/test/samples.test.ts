@@ -20,6 +20,19 @@ describe("annunci d'esempio", () => {
     expect(new Set(targets.map((t) => t!.format))).toEqual(new Set(["text", "image", "image_text"]));
   });
 
+  it("coprono tutte le combinazioni di canale e formato del seed", () => {
+    expect(new Set(targets.map((t) => t!.id))).toEqual(new Set(formats.map((f) => f.id)));
+  });
+
+  it("almeno un annuncio pubblica in un luogo diverso dalla sede", () => {
+    const { jobOffers } = llmSetup();
+    const moved = SAMPLES.filter((s) => s.location);
+    expect(moved.length).toBeGreaterThan(0);
+    for (const s of moved) {
+      expect(s.location?.locality).not.toBe(jobOffers.find((o) => o.id === s.jobOffer)?.location.locality);
+    }
+  });
+
   it("ogni esempio punta a una job offer del seed, e ogni job offer ne ha almeno uno", () => {
     const ids = new Set(llmSetup().jobOffers.map((o) => o.id));
     expect(SAMPLES.every((s) => ids.has(s.jobOffer))).toBe(true);

@@ -27,10 +27,12 @@ Monorepo con npm workspaces: tre pacchetti con responsabilità separate e un sol
 │   │   ├── src/
 │   │   │   ├── config.ts    # variabili d'ambiente validate, .env dalla root
 │   │   │   ├── db/          # connessione, migrazioni, seed e CLI db:*
-│   │   │   ├── modules/     # job-offers, channel-formats, locations, ads (repository; routes e service TODO)
+│   │   │   ├── modules/     # job-offers, channel-formats, locations, ads: routes → service → repository
 │   │   │   ├── llm/         # input_snapshot, prompt per kind, client Anthropic, validazione e retry
 │   │   │   ├── render/      # formattazione it-IT, testo per kind, HTML di foglio A4 e creative
-│   │   │   └── server.ts    # bootstrap Fastify                                (TODO)
+│   │   │   ├── http/        # validazione dell'input e formato unico degli errori
+│   │   │   ├── app.ts       # app Fastify con le route sotto /api
+│   │   │   └── server.ts    # avvio: .env, config, DB, client LLM, ascolto
 │   │   └── test/            # integrazione seed ↔ contratto, poi il resto
 │   └── web/                 # UI React + Vite (modulo opzionale)              (TODO)
 └── package.json             # workspaces e script unici: dev, test, typecheck
@@ -214,7 +216,42 @@ Se un copy esce male, si capisce se la causa è il prompt, il modello o i dati. 
 
 **Edit manuale**: nuova revisione `manual`, validata con `contentSchemaFor`, e aggiornamento del puntatore.
 
-Endpoint: `TODO`.
+### Endpoint
+
+Tutti sotto `/api`, JSON in ingresso e in uscita. L'input (parametri, query, body) è validato con Zod.
+
+| Metodo e percorso | Cosa fa |
+|---|---|
+| `GET /job-offers`, `GET /job-offers/:id` | Job offer con luogo e skill (senza `raw`) |
+| `GET /channel-formats` | Combinazioni pubblicabili con `kind` e `specs`: bastano a ricostruire lo schema degli edit |
+| `GET /ads?job_offer_id=&channel=&status=` | Annunci, dal più recentemente aggiornato |
+| `GET /ads/:id` | Annuncio con varianti e revisione corrente di ognuna |
+| `POST /ads` | Genera annuncio e varianti (1–4, una chiamata LLM per variante, in parallelo) e li salva in una transazione |
+| `POST /ads/:id/variants` | Genera una nuova variante con la prima label libera |
+| `PATCH /ads/:id` | Cambia lo stato |
+| `PATCH /variants/:id` | Accende o spegne una variante (`is_active`) |
+| `GET /variants/:id/revisions` | Storico, dal più recente |
+| `POST /variants/:id/revisions` | Edit manuale: nuova revisione `manual`, validata con `contentSchemaFor` |
+| `PUT /variants/:id/current-revision` | Ripristino: sposta il puntatore su una revisione esistente |
+| `GET /variants/:id/preview` | `{ text, html }` renderizzati; con `?as=html` la pagina HTML, servita con una CSP che non ammette script |
+
+Corpo di `POST /ads`: `{ job_offer_id, channel_format_id, location?, location_precision?, variants: [{ angle }] }`. Senza `location` si usa quello della job offer; senza precisione, `address` per le job board e `locality` per gli altri canali.
+
+Un annuncio `archived` è in sola lettura: nuove varianti, edit, ripristini e accensioni rispondono `409`.
+
+**Errori**, sempre nella forma `{ error: { code, message, details } }`:
+
+| HTTP | `code` | Quando |
+|---|---|---|
+| 400 | `invalid_input` | Parametri, query o body non validi (`details`: campi ed errori) |
+| 404 | `not_found` | Risorsa o route inesistente |
+| 409 | `invalid_transition` / `ad_archived` | Transizione di stato non ammessa / annuncio archiviato |
+| 422 | `invalid_content` | Edit manuale non valido per il formato (`details`: campi ed errori) |
+| 502 | `generation_failed` | Output LLM non conforme dopo il retry (`details`: errori) |
+| 503 | `provider_unavailable` | Chiave assente, rete, timeout, rate limit o errore del provider (`details.reason`) |
+| 500 | `internal_error` | Tutto il resto, con messaggio generico: la causa resta nel log del server |
+
+I messaggi non contengono mai credenziali né dettagli del provider.
 
 ## 4. Semplificazioni a cui badare
 

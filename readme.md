@@ -75,6 +75,17 @@ npm run db:migrate -w @job-ads-engine/api   # solo migrazioni
 npm run db:seed -w @job-ads-engine/api      # migrazioni e seed
 ```
 
+## API
+
+Il backend risponde su `http://localhost:3000/api`: l'elenco degli endpoint e degli errori è in [architecture.md](architecture.md#endpoint). Due esempi:
+
+```bash
+curl "localhost:3000/api/ads?channel=whatsapp"           # annunci WhatsApp
+curl "localhost:3000/api/variants/1/preview?as=html"     # anteprima HTML (aprendo l'URL nel browser si vede la pagina)
+```
+
+Senza `ANTHROPIC_API_KEY` il backend si avvia lo stesso: consultazione, edit manuali, ripristini e anteprime funzionano, la generazione risponde `503`.
+
 ## Test
 
 ```bash

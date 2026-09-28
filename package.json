@@ -11,6 +11,7 @@
     "apps/*"
   ],
   "scripts": {
+    "dev": "npm run dev -w @job-ads-engine/api",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "db:reset": "npm run db:reset -w @job-ads-engine/api"

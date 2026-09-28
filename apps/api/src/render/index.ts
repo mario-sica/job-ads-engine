@@ -30,6 +30,7 @@ export interface PreviewInput {
   /** Luogo dell'annuncio: non sta nel contenuto, si rende da qui. */
   location: LocationInput;
   precision: LocationPrecision;
+  jobTitle: string;
 }
 
 export interface Preview {
@@ -43,10 +44,10 @@ interface ValidatedContent {
   image?: unknown;
 }
 
-export function renderPreview({ target, content, location, precision }: PreviewInput): Preview {
+export function renderPreview({ target, content, location, precision, jobTitle }: PreviewInput): Preview {
   // Il contenuto salvato è già valido; rileggerlo con lo schema dà tipi certi al renderer.
   const parsed = contentSchemaFor(target).parse(content) as ValidatedContent;
-  const ctx: RenderContext = { facts: parsed.facts, location: formatLocation(location, precision) };
+  const ctx: RenderContext = { facts: parsed.facts, location: formatLocation(location, precision), jobTitle };
   return {
     text: parsed.text === undefined ? null : renderText(target, parsed.text, ctx),
     html: parsed.image === undefined ? null : renderImage(target, parsed.image, ctx),

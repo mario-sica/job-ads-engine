@@ -76,7 +76,8 @@ Se una scelta non è coperta da questo file o dai documenti: **chiedi, non decid
 
 ## Regole git
 
-- **`main`**: non si tocca. Contiene solo il commit iniziale.
+- **`main`**: riceve solo il merge `--no-ff` di `dev` alla consegna, dopo l'OK esplicito dello sviluppatore. Niente                                                                                          
+  commit diretti.
 - **`dev`**: niente commit diretti, solo merge `--no-ff` dei branch di step.
 - **Remoto** (`origin`, GitHub): il push lo fa solo lo sviluppatore. Sul remoto esistono solo `main` e `dev`; i branch di step restano locali e si vedono nella storia grazie ai merge `--no-ff`.
 - **Vietato**: `push`, `--force`, `rebase`, `reset --hard`, `--no-verify`, `commit --amend` su commit già mergiati.

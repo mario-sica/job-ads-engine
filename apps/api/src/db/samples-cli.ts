@@ -1,5 +1,6 @@
 import { loadConfig, loadEnvFile } from "../config.js";
 import { createAnthropicClient } from "../llm/client.js";
+import { GenerationFailedError } from "../llm/errors.js";
 import { PROMPT_VERSION } from "../llm/prompts.js";
 import { createAdsService } from "../modules/ads/service.js";
 import { createChannelFormatsRepository } from "../modules/channel-formats/repository.js";
@@ -31,17 +32,30 @@ async function main() {
     const formats = createChannelFormatsRepository(db).list();
     console.log(`Modello ${config.llmModel} · prompt ${PROMPT_VERSION} · DB ${config.databasePath}\n`);
 
+    const failures: string[] = [];
     for (const sample of SAMPLES) {
       const target = formats.find(
         (f) => f.channel_code === sample.channel && f.format === sample.format && f.aspect_ratio === sample.aspectRatio,
       );
       if (!target) throw new Error(`formato ${sample.channel} ${sample.format} ${sample.aspectRatio ?? ""} assente dal seed`);
-      const ad = await service.create({
-        job_offer_id: SAMPLE_JOB_OFFER,
-        channel_format_id: target.id,
-        variants: sample.angles.map((angle) => ({ angle })),
-      });
-      console.log(`→ annuncio ${ad.id} (${target.channel_name} ${target.format}): varianti ${ad.variants.map((v) => `${v.label}=${v.id}`).join(", ")}\n`);
+      const name = `${target.channel_name} ${target.format}${target.aspect_ratio ? ` ${target.aspect_ratio}` : ""}`;
+      // Un annuncio fallito non ferma gli altri: un giro deve mostrare tutti i problemi.
+      try {
+        const ad = await service.create({
+          job_offer_id: SAMPLE_JOB_OFFER,
+          channel_format_id: target.id,
+          variants: sample.angles.map((angle) => ({ angle })),
+        });
+        console.log(`→ annuncio ${ad.id} (${name}): varianti ${ad.variants.map((v) => `${v.label}=${v.id}`).join(", ")}\n`);
+      } catch (err) {
+        const errors = err instanceof GenerationFailedError ? err.errors.map((e) => `\n    - ${e}`).join("") : "";
+        failures.push(name);
+        console.log(`✗ ${name}: ${err instanceof Error ? err.message : String(err)}${errors}\n`);
+      }
+    }
+    if (failures.length > 0) {
+      console.log(`Annunci falliti: ${failures.join(", ")}`);
+      process.exitCode = 1;
     }
   } finally {
     db.close();

@@ -39,10 +39,13 @@ describe("prompt", () => {
     expect(social).not.toContain("niente bullet su contratto o RAL");
   });
 
-  it("v4: eccezione per l'angle sul contratto, tono senza contrapposizioni, titoli semplici", () => {
+  it("eccezione per l'angle sul contratto, tono senza contrapposizioni né emoji, titoli semplici", () => {
     const indeed = buildPrompt(format("indeed", "text"), snapshotFor()).system;
     expect(indeed).toContain("Eccezione: se l'angle punta sul contratto");
-    expect(indeed).toContain("niente contrapposizioni che sminuiscono altri lavori");
+    expect(indeed).toContain("Non costruire mai una frase per contrasto o confronto");
+    expect(indeed).toContain("Niente emoji, in nessun campo.");
+    // Le frasi da evitare non si citano: il modello tendeva a riprodurle.
+    for (const quoted of ["non tetti", "non in ufficio", "non a caso", "emoji)"]) expect(indeed).not.toContain(quoted);
     expect(indeed).toContain("I titoli sono il nome del ruolo in forma semplice");
     expect(buildPrompt(format("instagram", "image", "1:1"), snapshotFor()).system).not.toContain("Eccezione: se l'angle punta sul contratto");
   });

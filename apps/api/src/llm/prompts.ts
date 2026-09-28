@@ -5,7 +5,7 @@ import type { ChannelFormat } from "../modules/channel-formats/repository.js";
 import type { InputSnapshot } from "./snapshot.js";
 
 /** Salvata su ogni revisione generata: cambia a ogni modifica dei testi qui sotto. */
-export const PROMPT_VERSION = "v4";
+export const PROMPT_VERSION = "v5";
 
 export const TOOL_NAME = "submit_ad";
 
@@ -18,7 +18,9 @@ Regole sui dati:
 - Niente giudizi o aggettivi che la job offer non contiene (per esempio "in crescita", "dinamica", "giovane"): se non è scritto, non lo affermare. L'angle dice di cosa parlare, non autorizza giudizi che i dati non sostengono.
 
 Tono:
-- Professionale e rispettoso. Valorizza l'offerta per quello che è, mai per confronto: niente contrapposizioni che sminuiscono altri lavori, aziende o categorie (per esempio "grandi impianti, non tetti", "in cantiere, non in ufficio") e niente insinuazioni (per esempio "qui le trasferte sono gestite bene, non a caso").
+- Professionale e rispettoso verso ogni mestiere e ogni candidato. Descrivi l'offerta solo per ciò che è, con affermazioni dirette e positive.
+- Non costruire mai una frase per contrasto o confronto con altri lavori, luoghi, aziende o persone: niente strutture del tipo "X, non Y" o aperture in negativo come "niente…" o "basta…", e niente aggettivi che sottintendono un confronto, come "vero". Niente insinuazioni su come vanno le cose altrove.
+- Niente emoji, in nessun campo.
 - I titoli sono il nome del ruolo in forma semplice (per esempio "Tecnico fotovoltaico"): niente sigle tecniche come MT/BT o FV e niente formule come "Carriera da…". I dettagli tecnici vanno nella descrizione.
 - Non scrivere mai le cifre della retribuzione (RAL) nel testo. La RAL la mostra il sistema; tu scegli solo come presentarla nel campo salary_framing, tra i valori elencati in salary_framings: "range" (da… a…), "from" (a partire da…), "up_to" (fino a…). Scegli quello più coerente con l'angle. Se salary_framings è vuoto, usa null.
 - Il luogo da mettere in primo piano è published_location. workplace è la sede dell'azienda: citala solo come fatto aziendale.
@@ -58,7 +60,7 @@ const GUIDE: Record<Kind, Partial<Record<Part, string>>> = {
   },
   messaging: {
     text: `text: un messaggio WhatsApp, personale e breve.
-  - opening: una frase d'apertura che dica subito chi cerca chi (al massimo un emoji);
+  - opening: una frase d'apertura che dica subito chi cerca chi;
   - bullets: i punti che fanno rispondere, uno per riga;
   - cta: un invito a rispondere al messaggio.`,
     image: `image: un foglio A4 da inviare come immagine in chat.

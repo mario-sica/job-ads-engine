@@ -56,7 +56,7 @@ export function renderJobBoardText(description: JobDescription, { facts, locatio
 }
 
 export function renderChatMessageText(message: ChatMessage, { facts, location }: RenderContext): RenderedText {
-  const factsLine = [location && `📍 ${location}`, facts.salary && formatSalary(facts.salary), facts.contract_type]
+  const factsLine = [location, facts.salary && formatSalary(facts.salary), facts.contract_type]
     .filter(present)
     .join(" · ");
   return {

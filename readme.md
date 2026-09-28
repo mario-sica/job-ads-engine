@@ -63,8 +63,9 @@ Il file `.env` sta nella root del monorepo.
 
 - `apps/api/db/migrations/`: schema, file SQL applicati in ordine numerico.
 - `apps/api/db/seed/001_channels.sql`: canali, combinazioni canale/formato pubblicabili e relativi limiti (`specs`).
-- `apps/api/db/seed/job_offers.json`: la job offer di esempio della traccia, invariata.
-- `apps/api/data/gyver.db`: il database già popolato con annunci generati, versionato per vedere subito il risultato. `TODO`
+- `apps/api/db/seed/job_offers.json`: la job offer di esempio della traccia (`jo_001`), invariata.
+- `apps/api/db/seed/job_offers.fictional.json`: quattro job offer inventate (`jo_101`–`jo_104`) per provare la generazione su casi diversi: RAL solo minima, assente o solo massima, apprendistato, dati scarni, un tentativo di prompt injection.
+- `apps/api/data/gyver.db`: il database già popolato con gli annunci d'esempio, versionato per vedere subito il risultato anche senza chiave API.
 
 `npm run dev` applica migrazioni e seed se mancano. `npm run db:reset` ricrea il database da zero, senza gli annunci generati.
 
@@ -75,13 +76,33 @@ npm run db:migrate -w @job-ads-engine/api   # solo migrazioni
 npm run db:seed -w @job-ads-engine/api      # migrazioni e seed
 ```
 
+## Annunci d'esempio
+
+`apps/api/data/gyver.db` contiene annunci generati con `claude-sonnet-5` e il prompt `v10`, ciascuno con due varianti di angle diverso:
+
+| Annuncio | Job offer | Canale e formato | Varianti |
+|---|---|---|---|
+| 1 | `jo_001` Tecnico elettricista fotovoltaico | Indeed, testo | 1, 2 |
+| 2 | `jo_001` | WhatsApp, immagine A4 + testo | 3, 4 |
+| 3 | `jo_001` | TikTok, immagine + testo 9:16 | 5, 6 |
+| 4 | `jo_101` Idraulico termotecnico (solo RAL minima) | WhatsApp, testo | 7, 8 |
+| 5 | `jo_102` Manutentore elettromeccanico (senza RAL) | Indeed, testo | 9, 10 |
+| 6 | `jo_103` Installatore climatizzazione (apprendistato, dati scarni) | Instagram, immagine + testo 1:1 | 11, 12 |
+| 7 | `jo_104` Elettricista civile (con un tentativo di prompt injection) | WhatsApp, immagine A4 | 13, 14 |
+
+- Le varianti 1 e 7 hanno anche **revisioni manuali**: correggono due giudizi che la job offer non sostiene. Lo storico (`GET /api/variants/1/revisions`) mostra la revisione generata e quelle manuali; si può ripristinare l'una o l'altra.
+- L'anteprima delle immagini si apre nel browser: `http://localhost:3000/api/variants/3/preview?as=html`.
+- Manca un annuncio Instagram 4:5 per `jo_001`: fallisce quasi sempre per lunghezza dei testi dentro l'immagine (dettagli in [prompts.md](prompts.md#limiti-noti-a-fine-step-10)).
+
+Per rigenerarli serve la chiave API (circa 20 chiamate): `npm run db:reset && npm run samples -w @job-ads-engine/api`. Lo script salta gli annunci già presenti, quindi rilanciato dopo un fallimento genera solo quelli mancanti.
+
 ## API
 
 Il backend risponde su `http://localhost:3000/api`: l'elenco degli endpoint e degli errori è in [architecture.md](architecture.md#endpoint). Due esempi:
 
 ```bash
 curl "localhost:3000/api/ads?channel=whatsapp"           # annunci WhatsApp
-curl "localhost:3000/api/variants/1/preview?as=html"     # anteprima HTML (aprendo l'URL nel browser si vede la pagina)
+curl "localhost:3000/api/variants/3/preview?as=html"     # anteprima HTML (aprendo l'URL nel browser si vede la pagina)
 ```
 
 Senza `ANTHROPIC_API_KEY` il backend si avvia lo stesso: consultazione, edit manuali, ripristini e anteprime funzionano, la generazione risponde `503`.

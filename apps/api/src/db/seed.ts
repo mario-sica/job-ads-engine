@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
@@ -43,10 +43,20 @@ const jobOfferSchema = z.object({
   compensation_package: text,
 });
 
+/*
+ * Le job offer stanno in tutti i file `job_offers*.json` della cartella:
+ * `job_offers.json` è quella della traccia, invariata; `job_offers.fictional.json`
+ * contiene job offer inventate per provare la generazione su casi diversi.
+ */
+const JOB_OFFER_FILES = /^job_offers.*\.json$/;
+
 /** Canali, formati e job offer di esempio. Ripetibile: ciò che esiste già resta com'è. */
 export function seed(db: Db, dir = SEED_DIR): void {
   const channelsSql = readFileSync(join(dir, "001_channels.sql"), "utf8");
-  const raw = z.array(z.unknown()).parse(JSON.parse(readFileSync(join(dir, "job_offers.json"), "utf8")));
+  const raw = readdirSync(dir)
+    .filter((name) => JOB_OFFER_FILES.test(name))
+    .sort()
+    .flatMap((name) => z.array(z.unknown()).parse(JSON.parse(readFileSync(join(dir, name), "utf8"))));
   const offers = raw.map((item) => ({ offer: jobOfferSchema.parse(item), raw: JSON.stringify(item) }));
 
   const insertOffer = db.prepare(`

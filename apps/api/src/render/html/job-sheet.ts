@@ -23,7 +23,7 @@ export function renderJobSheetHtml(sheet: JobSheet, { facts, location }: RenderC
   // Chip dell'LLM, poi quelli composti dai facts: luogo, contratto, RAL.
   const chips = [
     ...sheet.tags,
-    location && `📍 ${location}`,
+    location,
     facts.contract_type,
     facts.salary && formatSalary(facts.salary),
   ].filter((c): c is string => Boolean(c));

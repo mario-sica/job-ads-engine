@@ -5,6 +5,7 @@ import { buildApp } from "../src/app.js";
 import type { LlmClient, LlmResponse } from "../src/llm/client.js";
 import type { InputSnapshot } from "../src/llm/snapshot.js";
 import { seededDb } from "./helpers.js";
+import { withoutEmoji } from "./llm-fixtures.js";
 
 /**
  * LLM finto che risponde con un output valido per il canale richiesto, letto
@@ -19,7 +20,7 @@ export function fakeLlm(options: { fail?: Error; failFrom?: number } = {}) {
       const user = messages[0]!.content as string;
       const json = user.slice(user.indexOf("<job_offer>") + "<job_offer>".length, user.lastIndexOf("</job_offer>"));
       const { channel } = JSON.parse(json) as InputSnapshot;
-      const { facts: _, ...parts } = validContent(channel);
+      const { facts: _, ...parts } = withoutEmoji(validContent(channel));
       const block = { type: "tool_use", id: `toolu_${calls.length}`, name: tool.name, input: { salary_framing: "range", ...parts } };
       return { model: "modello-finto", stop_reason: "tool_use", content: [block as Anthropic.ContentBlock] } satisfies LlmResponse;
     },

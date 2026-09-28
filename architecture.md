@@ -22,7 +22,7 @@ Monorepo con npm workspaces: tre pacchetti con responsabilità separate e un sol
 │   ├── api/                 # backend Fastify
 │   │   ├── db/
 │   │   │   ├── migrations/  # schema SQL numerato, applicato in ordine
-│   │   │   └── seed/        # canali, formati con i loro limiti, job offer di esempio
+│   │   │   └── seed/        # canali, formati con i loro limiti, job offer (traccia + fittizie)
 │   │   ├── data/            # gyver.db, già popolato                          (TODO)
 │   │   ├── src/
 │   │   │   ├── config.ts    # variabili d'ambiente validate, .env dalla root
@@ -69,7 +69,7 @@ In più, `ad_variants.current_revision_id` punta alla revisione corrente della v
 
 ### Concetti
 
-**Job offer.** È l'input interno: denso e non pubblicabile. Per questo servizio è read-only, perché arriva da altre entità; qui è seedata. Le colonne sono una proiezione del payload, che resta integro in `raw`.
+**Job offer.** È l'input interno: denso e non pubblicabile. Per questo servizio è read-only, perché arriva da altre entità; qui è seedata. Le colonne sono una proiezione del payload, che resta integro in `raw`. Il seed legge tutti i file `db/seed/job_offers*.json`: `job_offers.json` è la job offer della traccia, invariata; `job_offers.fictional.json` ne contiene quattro inventate per provare la generazione su casi che `jo_001` non ha (RAL solo minima, assente o solo massima, apprendistato, dati scarni, un tentativo di prompt injection).
 
 **Canale e formato.**
 - `channels` descrive la piattaforma e il suo `kind` (`job_board`, `messaging`, `social`).
@@ -94,7 +94,7 @@ L'annuncio referenzia una riga di `channel_formats`, quindi una combinazione non
 **Revisione (`ad_revisions`).** È il contenuto vero e proprio, append-only. Una modifica manuale crea una nuova revisione e sposta `current_revision_id`. Le precedenti restano consultabili e ripristinabili: il ripristino riporta il puntatore su una revisione esistente, senza crearne una nuova, così il contenuto non si duplica e la provenienza (`llm` o `manual`) resta quella originale.
 
 **Luogo (`locations`).** Tabella condivisa tra job offer e annunci.
-- Il luogo dell'annuncio è quello **mostrato** (es. il chip "📍 Orzinuovi (BS)" del foglio WhatsApp). Di default è quello della job offer, ma può differire.
+- Il luogo dell'annuncio è quello **mostrato** (es. il chip "Orzinuovi (BS)" del foglio WhatsApp). Di default è quello della job offer, ma può differire.
 - `location_precision` (`address`, `locality`, `province`) dice quanto dettaglio mostrare: Indeed vuole l'indirizzo completo, un'ad basta "Orzinuovi (BS)".
 - C'è un luogo per annuncio: più aree geografiche significano più annunci.
 - La chiave è un id surrogato, non il CAP: un CAP può coprire più comuni e un luogo a livello provincia non ne ha uno.
@@ -124,7 +124,7 @@ content = {
 
 **I limiti sono dati.** Ogni blocco ha limiti editoriali di default in `blocks.ts`; una riga di `channel_formats` li sovrascrive in `specs` solo dove serve. Alcuni esempi:
 - il messaggio WhatsApp da solo ha 3–6 bullet, accanto all'immagine 0–2;
-- in 9:16 l'hook può arrivare a 40 caratteri invece di 30.
+- nelle creative titolo, hook e sottotitolo hanno limiti **morbidi**: le righe social alzano il massimo del 20% sopra l'obiettivo editoriale (36 invece di 30; per l'hook in 9:16, 48 invece di 40). Il prompt chiede l'obiettivo, e il renderer riduce il font dei testi che lo superano (`apps/api/src/creative-fit.ts`).
 
 Lo schema Zod si costruisce a runtime da kind, formato e `specs`. Cambiare un limite è un UPDATE, non un deploy.
 
@@ -180,6 +180,7 @@ Garantita dall'applicazione:
 | `specs` coerenti (es. min ≤ max, nessuna chiave sconosciuta) | validate alla lettura, errore di configurazione |
 | RAL coerente con il framing scelto | refine su `facts`, con ripiego su un framing valido |
 | Nessuna cifra della RAL nel testo generato | `findSalaryLeaks` sull'output LLM |
+| Nessuna frase per contrapposizione, nessuna emoji, nessun riferimento all'età nel testo generato | `findToneIssues` sull'output LLM (l'età non si controlla nella descrizione della foto) |
 
 ### Tracciabilità della generazione
 
@@ -197,18 +198,21 @@ Se un copy esce male, si capisce se la causa è il prompt, il modello o i dati. 
    - `published_location` è il luogo dell'annuncio, da mettere in primo piano.
    - `workplace` è la sede, un fatto aziendale citabile.
    - Il risultato è l'`input_snapshot`: è anche l'unica cosa che lascia il sistema verso il provider.
-3. **Prompt**: istruzioni del kind nel prompt di sistema; `input_snapshot`, angle e limiti della riga nel messaggio utente, dentro un blocco dati delimitato che il modello tratta come dato e mai come istruzione. Lo schema di output è `llmOutputSchemaFor`, convertito in JSON Schema.
-4. **Generazione**: l'LLM produce JSON, che passa due controlli:
+3. **Prompt**: istruzioni del kind e limiti della riga nel prompt di sistema; `input_snapshot` (con l'angle) nel messaggio utente, dentro un blocco dati delimitato che il modello tratta come dato e mai come istruzione. Lo schema di output è `llmOutputSchemaFor`, convertito in JSON Schema.
+4. **Generazione**: l'LLM produce JSON, che passa tre controlli:
    - validazione con `llmOutputSchemaFor`;
-   - guardrail RAL.
+   - guardrail RAL;
+   - guardrail di tono ed emoji.
 
    Se l'output non è conforme, si fa un retry passando gli errori; se fallisce ancora, `502` e nulla salvato. Se il provider non risponde (chiave assente, rete, timeout, rate limit), `503` e nulla salvato.
 5. **Composizione**: `buildFacts(job_offer, salary_framing)` più le parti generate, poi validazione finale con `contentSchemaFor`.
 6. **Persistenza**: annuncio, variante, revisione e puntatore in una sola transazione. Una variante non esiste mai senza contenuto.
 7. **Lettura**: l'API restituisce l'annuncio con il contenuto corrente. Il renderer rilegge il contenuto con `contentSchemaFor` e produce il testo per canale e, per i formati con immagine, un documento HTML autosufficiente con le dimensioni delle `specs`. Luogo e dati deterministici li compone dai `facts` e dall'annuncio:
    - Indeed: campi strutturati (titolo, azienda, luogo, RAL, contratto, esperienza, competenze) più la descrizione;
-   - WhatsApp: messaggio con `*grassetto*` e una riga `📍 luogo · RAL · contratto`; il foglio A4 aggiunge gli stessi dati come chip;
+   - WhatsApp: messaggio con `*grassetto*` e una riga `luogo · RAL · contratto`; il foglio A4 aggiunge gli stessi dati come chip;
    - social: la caption è solo testo generato; la creative mostra i loghi "Gyver × azienda", titolo evidenziato, hook, sottotitolo e il segnaposto della foto, senza RAL né luogo.
+
+   Nessuna emoji, né nel testo generato (lo verifica un guardrail) né in quello composto dal renderer.
 
    In `JobDescription` la headline fa da titolo della sezione azienda, `role.title` della sezione ruolo; seguono "Quello che ti offrirà l'azienda:", aperta dalla riga RAL, e "Il tuo profilo:".
 
@@ -222,7 +226,8 @@ Tutti sotto `/api`, JSON in ingresso e in uscita. L'input (parametri, query, bod
 
 | Metodo e percorso | Cosa fa |
 |---|---|
-| `GET /job-offers`, `GET /job-offers/:id` | Job offer con luogo e skill (senza `raw`) |
+| `GET /job-offers` | Elenco sintetico: `id`, `title`, `company_name`, `location` |
+| `GET /job-offers/:id` | Job offer completa, con luogo e skill (senza `raw`) |
 | `GET /channel-formats` | Combinazioni pubblicabili con `kind` e `specs`: bastano a ricostruire lo schema degli edit |
 | `GET /ads?job_offer_id=&channel=&status=` | Annunci, dal più recentemente aggiornato |
 | `GET /ads/:id` | Annuncio con varianti e revisione corrente di ognuna |

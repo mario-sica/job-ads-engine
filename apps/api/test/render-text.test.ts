@@ -63,7 +63,7 @@ describe("testo per kind", () => {
     const { body, fields } = renderChatMessageText(CHAT_MESSAGE, ctx);
     expect(fields).toBeUndefined();
     expect(body.startsWith(`*${CHAT_MESSAGE.opening}*\n\n• `)).toBe(true);
-    expect(plain(body)).toContain("📍 Orzinuovi (BS) · RAL da 32.000 € · Tempo indeterminato");
+    expect(plain(body)).toContain("\n\nOrzinuovi (BS) · RAL da 32.000 € · Tempo indeterminato\n\n");
     expect(body.endsWith(CHAT_MESSAGE.cta)).toBe(true);
     await expect(`${body}\n`).toMatchFileSnapshot("./__snapshots__/render/whatsapp.txt");
   });

@@ -11,6 +11,7 @@ import type { z } from "zod";
 import type { Json, RevisionInput } from "../modules/ads/types.js";
 import type { LlmClient, LlmResponse } from "./client.js";
 import { GenerationFailedError } from "./errors.js";
+import { findToneIssues } from "./guards.js";
 import { buildPrompt, PROMPT_VERSION, TOOL_NAME } from "./prompts.js";
 import { buildInputSnapshot, type SnapshotInput } from "./snapshot.js";
 
@@ -24,11 +25,29 @@ const MAX_ATTEMPTS = 2;
 
 const issuesOf = (error: z.ZodError) => error.issues.map((i) => `${i.path.join(".") || "(radice)"}: ${i.message}`);
 
+const valueAt = (input: unknown, path: PropertyKey[]): unknown =>
+  path.reduce<unknown>((node, key) => (node !== null && typeof node === "object" ? (node as Record<PropertyKey, unknown>)[key] : undefined), input);
+
+/**
+ * Errori per il retry. Per un testo troppo lungo il modello riceve lunghezza e
+ * testo: "max 30" da solo non gli dice di quanto ha sforato né cosa accorciare.
+ */
+function retryIssuesOf(error: z.ZodError, input: unknown): string[] {
+  return error.issues.map((issue) => {
+    const path = issue.path.join(".") || "(radice)";
+    const value = valueAt(input, issue.path);
+    if (issue.code === "too_big" && issue.origin === "string" && typeof value === "string") {
+      return `${path}: ${value.length} caratteri, massimo ${String(issue.maximum)}. Accorcia: "${value}"`;
+    }
+    return `${path}: ${issue.message}`;
+  });
+}
+
 function toolUseOf(response: LlmResponse): Anthropic.ToolUseBlock | undefined {
   return response.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use" && b.name === TOOL_NAME);
 }
 
-/** Schema dell'output e guardrail RAL. Un output troncato o senza strumento è non conforme. */
+/** Schema dell'output, guardrail RAL e di tono. Un output troncato o senza strumento è non conforme. */
 function check(response: LlmResponse, schema: z.ZodType, salary: Salary | null): Check {
   const toolUse = toolUseOf(response);
   if (!toolUse) return { ok: false, errors: [`nessuna chiamata allo strumento ${TOOL_NAME}`], toolUseId: null };
@@ -36,10 +55,11 @@ function check(response: LlmResponse, schema: z.ZodType, salary: Salary | null):
   const errors: string[] = [];
   if (response.stop_reason === "max_tokens") errors.push("risposta troncata: output incompleto");
   const parsed = schema.safeParse(toolUse.input);
-  if (!parsed.success) errors.push(...issuesOf(parsed.error));
+  if (!parsed.success) errors.push(...retryIssuesOf(parsed.error, toolUse.input));
   for (const path of findSalaryLeaks(toolUse.input, salary)) {
     errors.push(`${path}: contiene una cifra della RAL, che non va scritta nel testo`);
   }
+  errors.push(...findToneIssues(toolUse.input));
   return errors.length === 0 && parsed.success
     ? { ok: true, output: parsed.data as LlmOutput }
     : { ok: false, errors, toolUseId: toolUse.id };
@@ -58,7 +78,7 @@ function retryTurn(response: LlmResponse, errors: string[], toolUseId: string | 
           type: "tool_result",
           tool_use_id: toolUseId,
           is_error: true,
-          content: `L'annuncio non rispetta i vincoli. Correggi questi errori e richiama ${TOOL_NAME} con l'annuncio completo:\n${errors
+          content: `L'annuncio non rispetta i vincoli. Correggi questi errori e reinvia l'annuncio completo:\n${errors
             .map((e) => `- ${e}`)
             .join("\n")}`,
         },

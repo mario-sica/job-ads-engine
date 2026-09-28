@@ -7,14 +7,22 @@ import { createJobOffersRepository } from "../src/modules/job-offers/repository.
 import { seededDb } from "./helpers.js";
 
 describe("repository delle job offer", () => {
-  it("elenca la job offer seedata con skill e luogo già convertiti", () => {
-    const [offer, ...rest] = createJobOffersRepository(seededDb()).list();
-    expect(rest).toEqual([]);
-    expect(offer).toMatchObject({
+  it("l'elenco restituisce solo id, titolo, azienda e luogo", () => {
+    const offers = createJobOffersRepository(seededDb()).list();
+    for (const offer of offers) expect(Object.keys(offer).sort()).toEqual(["company_name", "id", "location", "title"]);
+    expect(offers.find((o) => o.id === "jo_001")).toEqual({
       id: "jo_001",
+      title: "Tecnico elettricista fotovoltaico",
       company_name: "AB Group SpA",
+      location: expect.objectContaining({ locality: "Orzinuovi", province_code: "BS", street_name: "Via Artigianato" }),
+    });
+  });
+
+  it("il dettaglio ha skill e luogo già convertiti, senza raw", () => {
+    const offer = createJobOffersRepository(seededDb()).get("jo_001");
+    expect(offer).toMatchObject({
       required_skills: ["Fotovoltaico industriale", "Cabine secondarie - MT/BT"],
-      location: { locality: "Orzinuovi", province_code: "BS", street_name: "Via Artigianato" },
+      location: { locality: "Orzinuovi" },
     });
     expect(offer).not.toHaveProperty("raw");
   });
@@ -34,7 +42,7 @@ describe("repository dei formati di canale", () => {
     const formats = createChannelFormatsRepository(seededDb()).list();
     expect(formats).toHaveLength(12);
     const vertical = formats.find((f) => f.channel_code === "instagram" && f.format === "image" && f.aspect_ratio === "9:16");
-    expect(vertical).toMatchObject({ channel_name: "Instagram", kind: "social", specs: { limits: { image: { hook_max: 40 } } } });
+    expect(vertical).toMatchObject({ channel_name: "Instagram", kind: "social", specs: { limits: { image: { title_max: 36, hook_max: 48, subline_max: 36 } } } });
   });
 
   it("ogni formato è un ContentTarget valido", () => {

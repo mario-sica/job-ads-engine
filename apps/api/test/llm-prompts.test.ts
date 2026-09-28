@@ -25,18 +25,53 @@ describe("prompt", () => {
     },
   );
 
-  it("i limiti della riga entrano nel prompt: l'hook del 9:16 arriva a 40", () => {
-    expect(buildPrompt(format("instagram", "image", "9:16"), snapshotFor()).system).toContain("- image.hook: al massimo 40 caratteri");
-    expect(buildPrompt(format("instagram", "image", "1:1"), snapshotFor()).system).toContain("- image.hook: al massimo 30 caratteri");
-    expect(buildPrompt(format("whatsapp", "text"), snapshotFor()).system).toContain("- text.bullets: da 3 a 6 elementi, ciascuno al massimo 120 caratteri");
+  it("i limiti della riga entrano nel prompt; i campi morbidi della creative chiedono l'obiettivo", () => {
+    expect(buildPrompt(format("instagram", "image", "9:16"), snapshotFor()).system).toContain(
+      "- image.hook: punta a 40 caratteri (circa 6 parole); oltre 48 il testo viene rifiutato",
+    );
+    const square = buildPrompt(format("instagram", "image", "1:1"), snapshotFor()).system;
+    expect(square).toContain("- image.title.text: punta a 30 caratteri (circa 4 parole); oltre 36 il testo viene rifiutato");
+    expect(square).toContain("- image.visual_brief: al massimo 200 caratteri (circa 29 parole)");
+    expect(buildPrompt(format("whatsapp", "image", "A4"), snapshotFor()).system).toContain("- image.title: al massimo 40 caratteri");
+    expect(buildPrompt(format("whatsapp", "text"), snapshotFor()).system).toContain("- text.bullets: da 3 a 6 elementi, ciascuno al massimo 120 caratteri (circa 17 parole)");
   });
 
   it("la regola sui dati mostrati dal sistema dipende dal kind", () => {
-    expect(buildPrompt(format("indeed", "text"), snapshotFor()).system).toContain("non dedicare loro dei bullet");
-    expect(buildPrompt(format("whatsapp", "text"), snapshotFor()).system).toContain("non dedicare loro dei bullet");
+    expect(buildPrompt(format("indeed", "text"), snapshotFor()).system).toContain("niente bullet su contratto o RAL");
+    expect(buildPrompt(format("whatsapp", "text"), snapshotFor()).system).toContain("niente bullet su contratto o RAL");
     const social = buildPrompt(format("tiktok", "image_text", "9:16"), snapshotFor()).system;
     expect(social).toContain("il sistema non mostra contratto né luogo");
-    expect(social).not.toContain("non dedicare loro dei bullet");
+    expect(social).not.toContain("niente bullet su contratto o RAL");
+  });
+
+  it("eccezione per l'angle sul contratto, tono senza contrapposizioni né emoji, titoli semplici", () => {
+    const indeed = buildPrompt(format("indeed", "text"), snapshotFor()).system;
+    expect(indeed).toContain("Eccezione: se l'angle punta sul contratto");
+    expect(indeed).toContain("non costruire frasi per contrasto");
+    expect(indeed).toContain("Niente emoji in nessun campo");
+    // Le frasi da evitare non si citano: il modello tendeva a riprodurle.
+    for (const quoted of ["non tetti", "non in ufficio", "non a caso", "emoji)"]) expect(indeed).not.toContain(quoted);
+    expect(indeed).toContain("Titoli. Sono il nome del ruolo in forma semplice");
+    expect(indeed).toContain("È una direzione, non un testo da copiare");
+    // Il tool use è forzato: il prompt di sistema non nomina lo strumento.
+    expect(indeed).not.toContain("submit_ad");
+    expect(buildPrompt(format("instagram", "image", "1:1"), snapshotFor()).system).not.toContain("Eccezione: se l'angle punta sul contratto");
+  });
+
+  it("azienda e ruolo distinti, con un esempio astratto che non contiene dati reali", () => {
+    const { system } = buildPrompt(format("indeed", "text"), snapshotFor());
+    expect(system).toContain("Azienda e ruolo sono due cose distinte.");
+    expect(system).toContain("mai come leader in A, se A non è tra i settori elencati");
+    expect(system).toContain("con le sue qualifiche così come sono nella job offer");
+    // L'esempio non deve suggerire la risposta per jo_001, che serve a verificare la regola.
+    for (const sector of ["cogenerazione", "biogas", "rinnovabili"]) expect(system).not.toContain(sector);
+  });
+
+  it("niente età nel testo e nessun segnaposto per la RAL", () => {
+    const indeed = buildPrompt(format("indeed", "text"), snapshotFor()).system;
+    expect(indeed).toContain("nel testo non indicare l'età di chi legge");
+    expect(indeed).toContain("Eccezione: se l'angle punta sul contratto, un bullet sul contratto è ammesso (mai con le cifre della RAL).");
+    expect(indeed).not.toContain("{RAL}");
   });
 
   it("solo i formati image_text chiedono un testo breve accanto all'immagine", () => {

@@ -24,7 +24,7 @@ describe("foglio A4 WhatsApp", () => {
   });
 
   it("mostra i chip dell'LLM e quelli composti dai facts", () => {
-    expect(html).toMatch(/<li>Impianti fotovoltaici industriali<\/li><li>📍 Orzinuovi \(BS\)<\/li><li>Tempo indeterminato<\/li><li>RAL da 32\.000.€<\/li>/u);
+    expect(html).toMatch(/<li>Impianti fotovoltaici industriali<\/li><li>Orzinuovi \(BS\)<\/li><li>Tempo indeterminato<\/li><li>RAL da 32\.000.€<\/li>/u);
   });
 
   it("contiene le sezioni della JobDescription e il segnaposto del logo", () => {

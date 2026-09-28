@@ -2,14 +2,14 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { ConfigError, loadConfig, loadEnvFile, ROOT_DIR } from "../src/config.js";
+import { ConfigError, DEFAULT_LLM_MODEL, loadConfig, loadEnvFile, ROOT_DIR } from "../src/config.js";
 
 describe("loadConfig", () => {
   it("applica i default con un ambiente vuoto", () => {
     expect(loadConfig({})).toEqual({
       databasePath: resolve(ROOT_DIR, "apps/api/data/gyver.db"),
       port: 3000,
-      llmModel: undefined,
+      llmModel: "claude-sonnet-5",
       llmTimeoutSeconds: 60,
       anthropicApiKey: undefined,
     });
@@ -33,7 +33,7 @@ describe("loadConfig", () => {
 
   it("tratta le variabili vuote come assenti", () => {
     const config = loadConfig({ ANTHROPIC_API_KEY: "", LLM_MODEL: "  ", PORT: "" });
-    expect(config).toMatchObject({ anthropicApiKey: undefined, llmModel: undefined, port: 3000 });
+    expect(config).toMatchObject({ anthropicApiKey: undefined, llmModel: DEFAULT_LLM_MODEL, port: 3000 });
   });
 
   it.each([["PORT", "abc"], ["PORT", "70000"], ["LLM_TIMEOUT_SECONDS", "0"]])(

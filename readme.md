@@ -54,7 +54,7 @@ Il file `.env` sta nella root del monorepo.
 | Variabile | Obbligatoria | Default | Descrizione |
 |---|---|---|---|
 | `ANTHROPIC_API_KEY` | solo per generare | — | Chiave API, dalla Console Anthropic → API Keys (`TODO: link`). Senza chiave consultazione e modifica funzionano; la generazione risponde `503`. |
-| `LLM_MODEL` | no | `TODO` | Modello usato per la generazione |
+| `LLM_MODEL` | no | `claude-sonnet-5` | Modello usato per la generazione. Deve accettare il tool use forzato: Opus 5.5 e Fable 5.1 non lo accettano (dettagli in [prompts.md](prompts.md)). |
 | `LLM_TIMEOUT_SECONDS` | no | `60` | Timeout della chiamata al modello |
 | `DATABASE_PATH` | no | `apps/api/data/gyver.db` | Percorso del file SQLite, relativo alla root |
 | `PORT` | no | `3000` | Porta del backend |

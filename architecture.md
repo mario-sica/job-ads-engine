@@ -28,7 +28,7 @@ Monorepo con npm workspaces: tre pacchetti con responsabilità separate e un sol
 │   │   │   ├── config.ts    # variabili d'ambiente validate, .env dalla root
 │   │   │   ├── db/          # connessione, migrazioni, seed e CLI db:*
 │   │   │   ├── modules/     # job-offers, channel-formats, locations, ads (repository; routes e service TODO)
-│   │   │   ├── llm/         # proiezione, prompt, client, validazione e retry  (TODO)
+│   │   │   ├── llm/         # input_snapshot, prompt per kind, client Anthropic, validazione e retry
 │   │   │   ├── render/      # formattazione it-IT, testo per kind, HTML di foglio A4 e creative
 │   │   │   └── server.ts    # bootstrap Fastify                                (TODO)
 │   │   └── test/            # integrazione seed ↔ contratto, poi il resto

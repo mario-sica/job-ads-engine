@@ -39,6 +39,14 @@ describe("prompt", () => {
     expect(social).not.toContain("niente bullet su contratto o RAL");
   });
 
+  it("v4: eccezione per l'angle sul contratto, tono senza contrapposizioni, titoli semplici", () => {
+    const indeed = buildPrompt(format("indeed", "text"), snapshotFor()).system;
+    expect(indeed).toContain("Eccezione: se l'angle punta sul contratto");
+    expect(indeed).toContain("niente contrapposizioni che sminuiscono altri lavori");
+    expect(indeed).toContain("I titoli sono il nome del ruolo in forma semplice");
+    expect(buildPrompt(format("instagram", "image", "1:1"), snapshotFor()).system).not.toContain("Eccezione: se l'angle punta sul contratto");
+  });
+
   it("solo i formati image_text chiedono un testo breve accanto all'immagine", () => {
     const hint = "il testo resta breve";
     expect(buildPrompt(format("whatsapp", "image_text", "A4"), snapshotFor()).system).toContain(hint);

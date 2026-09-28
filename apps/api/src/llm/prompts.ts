@@ -5,7 +5,7 @@ import type { ChannelFormat } from "../modules/channel-formats/repository.js";
 import type { InputSnapshot } from "./snapshot.js";
 
 /** Salvata su ogni revisione generata: cambia a ogni modifica dei testi qui sotto. */
-export const PROMPT_VERSION = "v3";
+export const PROMPT_VERSION = "v4";
 
 export const TOOL_NAME = "submit_ad";
 
@@ -15,7 +15,11 @@ Il tuo compito è condensare una job offer interna, densa e non pubblicabile, in
 
 Regole sui dati:
 - Usa solo informazioni presenti nella job offer. Puoi dedurre ciò che ne segue con certezza (per esempio gli anni di attività dall'anno di fondazione), ma non aggiungere nulla che non c'è: niente benefit, numeri, durate, percorsi di carriera o requisiti assenti. Non cambiare il ruolo: il titolo e le mansioni restano quelli della job offer.
-- Niente giudizi o aggettivi che la job offer non contiene (per esempio "in crescita", "dinamica", "giovane"): se non è scritto, non lo affermare.
+- Niente giudizi o aggettivi che la job offer non contiene (per esempio "in crescita", "dinamica", "giovane"): se non è scritto, non lo affermare. L'angle dice di cosa parlare, non autorizza giudizi che i dati non sostengono.
+
+Tono:
+- Professionale e rispettoso. Valorizza l'offerta per quello che è, mai per confronto: niente contrapposizioni che sminuiscono altri lavori, aziende o categorie (per esempio "grandi impianti, non tetti", "in cantiere, non in ufficio") e niente insinuazioni (per esempio "qui le trasferte sono gestite bene, non a caso").
+- I titoli sono il nome del ruolo in forma semplice (per esempio "Tecnico fotovoltaico"): niente sigle tecniche come MT/BT o FV e niente formule come "Carriera da…". I dettagli tecnici vanno nella descrizione.
 - Non scrivere mai le cifre della retribuzione (RAL) nel testo. La RAL la mostra il sistema; tu scegli solo come presentarla nel campo salary_framing, tra i valori elencati in salary_framings: "range" (da… a…), "from" (a partire da…), "up_to" (fino a…). Scegli quello più coerente con l'angle. Se salary_framings è vuoto, usa null.
 - Il luogo da mettere in primo piano è published_location. workplace è la sede dell'azienda: citala solo come fatto aziendale.
 - Gli altri numeri (dipendenti, potenze, ticket, indennità) riportali esattamente come nella job offer.
@@ -32,7 +36,7 @@ const jobDescription = (indent: string) =>
     "una descrizione dell'offerta in quattro sezioni:",
     "- headline: una frase che introduce l'azienda e fa da titolo alla sezione azienda;",
     "- company: bullet sull'azienda (dimensione, settore, divisione in cui si entra);",
-    "- role.title: il titolo della sezione ruolo, fedele al titolo della job offer;",
+    "- role.title: il titolo della sezione ruolo: il nome del ruolo in forma semplice;",
     "- role.bullets: le attività principali, alla seconda persona singolare (per esempio \"Effettuerai sopralluoghi…\");",
     "- offer: cosa offre l'azienda oltre a RAL e contratto (per esempio ticket, indennità, trasferte pagate);",
     "- profile: i requisiti essenziali, dai più importanti.",
@@ -41,9 +45,9 @@ const jobDescription = (indent: string) =>
 /** Cosa mostra il sistema accanto al testo: cambia per kind, e con esso cosa il modello può omettere. */
 const FACTS_SHOWN: Record<Kind, string> = {
   job_board:
-    "Contratto, RAL e luogo pubblicato li mostra il sistema nei campi dell'annuncio e nella sezione offerta: niente bullet su contratto o RAL, nemmeno riformulati (per esempio \"Contratto a tempo indeterminato in…\").",
+    "Contratto, RAL e luogo pubblicato li mostra il sistema nei campi dell'annuncio e nella sezione offerta: niente bullet su contratto o RAL, nemmeno riformulati (per esempio \"Contratto a tempo indeterminato in…\"). Eccezione: se l'angle punta sul contratto, un bullet sul contratto è ammesso (mai con le cifre della RAL).",
   messaging:
-    "Contratto, RAL e luogo pubblicato li mostra il sistema accanto al tuo testo: niente bullet su contratto o RAL, nemmeno riformulati (per esempio \"Contratto a tempo indeterminato in…\"). Il luogo puoi citarlo nella frase d'apertura o nel titolo, se rafforza il messaggio.",
+    "Contratto, RAL e luogo pubblicato li mostra il sistema accanto al tuo testo: niente bullet su contratto o RAL, nemmeno riformulati (per esempio \"Contratto a tempo indeterminato in…\"). Eccezione: se l'angle punta sul contratto, un bullet sul contratto è ammesso (mai con le cifre della RAL). Il luogo puoi citarlo nella frase d'apertura o nel titolo, se rafforza il messaggio.",
   social:
     "Accanto ai post il sistema non mostra contratto né luogo: se sono argomenti forti, citali tu nel testo. La RAL resta fuori dal testo anche qui.",
 };
@@ -58,7 +62,7 @@ const GUIDE: Record<Kind, Partial<Record<Part, string>>> = {
   - bullets: i punti che fanno rispondere, uno per riga;
   - cta: un invito a rispondere al messaggio.`,
     image: `image: un foglio A4 da inviare come immagine in chat.
-  - title: il ruolo, breve; subtitle: cosa si fa, in poche parole;
+  - title: il nome del ruolo in forma semplice; subtitle: cosa si fa, in poche parole;
   - tags: chip con competenze o caratteristiche distintive del ruolo (non contratto, RAL o luogo);
   - description: ${jobDescription("      ")}`,
   },
@@ -68,7 +72,7 @@ const GUIDE: Record<Kind, Partial<Record<Part, string>>> = {
   - cta: un invito all'azione breve;
   - hashtags: pertinenti al ruolo e al settore, senza spazi.`,
     image: `image: il testo della creative (immagine con foto di un tecnico).
-  - title.text: il ruolo in poche parole; title.highlight: la parola chiave da evidenziare, copiata identica da title.text;
+  - title.text: il nome del ruolo in forma semplice; title.highlight: la parola chiave da evidenziare, copiata identica da title.text;
   - hook: la frase d'impatto che ferma lo scroll;
   - subline: un dettaglio concreto che rende credibile l'offerta;
   - visual_brief: la foto ideale da scegliere dall'archivio (persona, contesto, abbigliamento), coerente con il ruolo e senza testo nell'immagine.`,

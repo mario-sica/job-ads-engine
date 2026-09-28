@@ -31,6 +31,14 @@ describe("prompt", () => {
     expect(buildPrompt(format("whatsapp", "text"), snapshotFor()).system).toContain("- text.bullets: da 3 a 6 elementi, ciascuno al massimo 120 caratteri");
   });
 
+  it("la regola sui dati mostrati dal sistema dipende dal kind", () => {
+    expect(buildPrompt(format("indeed", "text"), snapshotFor()).system).toContain("non dedicare loro dei bullet");
+    expect(buildPrompt(format("whatsapp", "text"), snapshotFor()).system).toContain("non dedicare loro dei bullet");
+    const social = buildPrompt(format("tiktok", "image_text", "9:16"), snapshotFor()).system;
+    expect(social).toContain("il sistema non mostra contratto né luogo");
+    expect(social).not.toContain("non dedicare loro dei bullet");
+  });
+
   it("solo i formati image_text chiedono un testo breve accanto all'immagine", () => {
     const hint = "il testo resta breve";
     expect(buildPrompt(format("whatsapp", "image_text", "A4"), snapshotFor()).system).toContain(hint);

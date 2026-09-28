@@ -5,7 +5,7 @@ import type { ChannelFormat } from "../modules/channel-formats/repository.js";
 import type { InputSnapshot } from "./snapshot.js";
 
 /** Salvata su ogni revisione generata: cambia a ogni modifica dei testi qui sotto. */
-export const PROMPT_VERSION = "v1";
+export const PROMPT_VERSION = "v2";
 
 export const TOOL_NAME = "submit_ad";
 
@@ -16,7 +16,6 @@ Il tuo compito è condensare una job offer interna, densa e non pubblicabile, in
 Regole sui dati:
 - Usa solo informazioni presenti nella job offer. Puoi dedurre ciò che ne segue con certezza (per esempio gli anni di attività dall'anno di fondazione), ma non aggiungere nulla che non c'è: niente benefit, numeri, durate, percorsi di carriera o requisiti assenti. Non cambiare il ruolo: il titolo e le mansioni restano quelli della job offer.
 - Non scrivere mai le cifre della retribuzione (RAL) nel testo. La RAL la mostra il sistema; tu scegli solo come presentarla nel campo salary_framing, tra i valori elencati in salary_framings: "range" (da… a…), "from" (a partire da…), "up_to" (fino a…). Scegli quello più coerente con l'angle. Se salary_framings è vuoto, usa null.
-- Contratto, RAL e luogo pubblicato li mostra il sistema accanto al tuo testo: non dedicare loro dei bullet. Il luogo puoi citarlo in una frase d'apertura o in un titolo, se rafforza il messaggio.
 - Il luogo da mettere in primo piano è published_location. workplace è la sede dell'azienda: citala solo come fatto aziendale.
 - Gli altri numeri (dipendenti, potenze, ticket, indennità) riportali esattamente come nella job offer.
 
@@ -37,6 +36,16 @@ const jobDescription = (indent: string) =>
     "- offer: cosa offre l'azienda oltre a RAL e contratto (per esempio ticket, indennità, trasferte pagate);",
     "- profile: i requisiti essenziali, dai più importanti.",
   ].join(`\n${indent}`);
+
+/** Cosa mostra il sistema accanto al testo: cambia per kind, e con esso cosa il modello può omettere. */
+const FACTS_SHOWN: Record<Kind, string> = {
+  job_board:
+    "Contratto, RAL e luogo pubblicato li mostra il sistema nei campi dell'annuncio e nella sezione offerta: non dedicare loro dei bullet.",
+  messaging:
+    "Contratto, RAL e luogo pubblicato li mostra il sistema accanto al tuo testo: non dedicare loro dei bullet. Il luogo puoi citarlo nella frase d'apertura o nel titolo, se rafforza il messaggio.",
+  social:
+    "Accanto ai post il sistema non mostra contratto né luogo: se sono argomenti forti, citali tu nel testo. La RAL resta fuori dal testo anche qui.",
+};
 
 const GUIDE: Record<Kind, Partial<Record<Part, string>>> = {
   job_board: {
@@ -115,6 +124,7 @@ export function buildPrompt(target: ChannelFormat, snapshot: InputSnapshot): Pro
   const system = `${COMMON}
 
 Annuncio da scrivere: ${target.channel_name} (${format}).
+${FACTS_SHOWN[target.kind]}
 ${parts.join("\n\n")}
 
 L'angle della variante è nel campo angle: orienta la scelta dei contenuti e il tono. Se è null, punta sull'argomento più forte della job offer.

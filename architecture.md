@@ -34,7 +34,13 @@ Monorepo con npm workspaces: tre pacchetti con responsabilità separate e un sol
 │   │   │   ├── app.ts       # app Fastify con le route sotto /api
 │   │   │   └── server.ts    # avvio: .env, config, DB, client LLM, ascolto
 │   │   └── test/            # integrazione seed ↔ contratto, poi il resto
-│   └── web/                 # UI React + Vite (modulo opzionale)              (TODO)
+│   └── web/                 # UI React + Vite (modulo opzionale)
+│       ├── src/
+│       │   ├── api.ts           client fetch, tipi delle risposte, errori tipizzati
+│       │   ├── content-form.ts  modulo di edit generato dallo schema del formato
+│       │   ├── create-ad.ts     dal modulo di creazione al corpo di POST /ads
+│       │   └── components/      elenco, creazione, dettaglio, anteprima, edit, storico
+│       └── test/            # logica pura: client, modulo di edit, creazione
 └── package.json             # workspaces e script unici: dev, test, typecheck
 ```
 
@@ -50,7 +56,9 @@ Tenerlo in un pacchetto dedicato evita di duplicare tipi e regole tra frontend e
 - **service**: orchestrazione. Carica la job offer, chiama l'LLM, valida l'output e persiste in transazione.
 - **repository**: solo SQL.
 
-**In sviluppo** `npm run dev` avvia api e web insieme. Vite inoltra le chiamate `/api` al backend, quindi niente URL hardcoded e niente CORS.
+**In sviluppo** `npm run dev` avvia api e web insieme (`concurrently`, output etichettato per processo). Vite inoltra le chiamate `/api` al backend, quindi niente URL hardcoded e niente CORS.
+
+**La UI** è una sola pagina, senza router né state manager: `fetch` e `useState`. Importa da `packages/content` solo lo schema del contenuto: il modulo di edit nasce da `z.toJSONSchema(contentSchemaFor(formato))`, con le `specs` lette da `GET /api/channel-formats`, quindi campi, limiti e contatori sono gli stessi del server senza codice per kind. I tipi delle risposte dell'API (`Ad`, `Variant`, `Revision`) sono ridefiniti in `apps/web/src/api.ts` con i soli campi usati: non fanno parte del contratto del contenuto, e importarli dall'api porterebbe nella UI i tipi di Node e del DB.
 
 ## 2. Modello dati
 

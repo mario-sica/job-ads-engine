@@ -188,7 +188,7 @@ Gli step 1–4 committano file **già presenti** nella cartella: rileggili, veri
   - Script che genera annunci d'esempio per `jo_001` con l'API reale: almeno un annuncio per kind, con due varianti di angle diverso, e una combinazione per ciascun formato.
   - Rileggi gli output con lo sviluppatore: ogni problema osservato diventa una riga del log delle iterazioni in `prompts.md`, con la modifica fatta al prompt.
   - Versiona `apps/api/data/gyver.db`, così chi valuta vede subito il risultato anche senza chiave.
-- [ ] **11. `feat/web-ui`** (modulo opzionale, in `apps/web`)
+- [x] **11. `feat/web-ui`** (modulo opzionale, in `apps/web`)
   - React + Vite + TypeScript, con un proprio `tsconfig.json` (JSX, `moduleResolution: bundler`).
   - Il proxy di Vite inoltra `/api` al backend: nessun URL hardcoded e nessun CORS.
   - Tipi e validazione degli edit da `@job-ads-engine/content`: lo stesso schema del server, costruito dalle specs di `GET /api/channel-formats`.

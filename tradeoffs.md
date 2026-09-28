@@ -42,6 +42,40 @@
 - **Cifre della RAL nel copy tramite un segnaposto `{RAL}`.** Provato nel giro v9: il modello lo usava anche fuori contesto, raddoppiava il prefisso ("da da 26.000 €") e ripeteva la RAL già mostrata. Ritirato: la RAL resta composta solo dal renderer.
 - **Un endpoint per modificare singoli campi.** Valutato per l'edit manuale; l'edit a contenuto completo, copiato dalla lettura e reinviato, si è rivelato sufficiente.
 
+## Tempo: cosa era necessario e cosa no
+
+La traccia chiede di non superare le quattro ore e mezza complessive. Le ho superate, e lo dichiaro. Tempo effettivo: `TODO`.
+
+Distinguo il lavoro che serviva a rispettare la traccia da quello fatto oltre, per scelta.
+
+**Necessario: il modulo obbligatorio.** È la parte che avrebbe dovuto stare nelle quattro ore e mezza.
+- Modello dati con la gerarchia job offer → annuncio → variante → revisione, vincoli nel DB e seed della job offer della traccia.
+- Contratto del contenuto per kind e formato, usato sia per l'output dell'LLM sia per gli edit manuali.
+- API: annunci interrogabili per job offer e canale, generazione di annunci e varianti, edit manuale come nuova revisione, stato dell'annuncio.
+- Generazione con output strutturato, validazione, un retry con gli errori, guardrail sulla RAL ed errori distinti per provider non disponibile e output non conforme.
+- Rendering essenziale: testo per canale e un template HTML per i formati con immagine.
+- Un DB già popolato con annunci generati davvero, e i documenti richiesti.
+
+**Facoltativo: fatto oltre il tempo.**
+- **L'affinamento dei prompt per la coerenza del copy.** Nove giri di generazione reale, circa 150 chiamate, dalla v2 alla v10. Un solo giro avrebbe dato annunci validi per lo schema, ma con errori che un recruiter deve correggere a mano:
+  - qualifiche dell'azienda sbagliate;
+  - giudizi assenti dalla job offer;
+  - frasi costruite per contrasto con altri lavori;
+  - testi troppo lunghi per le creative.
+
+  È la parte che ha preso più tempo. L'ho considerata la più utile, perché la qualità del copy è un criterio di valutazione.
+- **I guardrail di tono** (contrapposizioni, emoji, età) e i **limiti morbidi** delle creative, con il font ridotto dal renderer.
+- **Quattro job offer fittizie** per i casi che `jo_001` non copre: RAL parziale o assente, apprendistato, dati scarni, un tentativo di prompt injection.
+- **La UI**, che la traccia indica come modulo opzionale.
+
+**Compromessi fatti per contenere i tempi**, che restano anche nella versione consegnata:
+- un solo template HTML per kind, che si adatta alle proporzioni, invece di uno per formato;
+- UI minimale: una pagina, niente router né componenti grafici, un modulo di edit generato dallo schema invece di moduli su misura per canale;
+- test della UI solo sulla logica pura (client, modulo di edit, creazione); i componenti li ho verificati a mano;
+- negli esempi manca Instagram 4:5: ho scelto di non fare un altro giro di prompt per quel solo formato;
+- due giudizi non supportati corretti con l'edit manuale invece che con un altro giro;
+- nessun export PNG delle creative, nessuna pubblicazione reale sui canali, nessuna autenticazione.
+
 ## Cosa ho sacrificato
 
 - **UI volutamente minimale**, come consente la traccia: il tempo va alla generazione reale e alla verifica del copy, che sono criteri di valutazione.

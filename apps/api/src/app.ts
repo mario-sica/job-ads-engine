@@ -2,6 +2,7 @@ import Fastify, { type FastifyInstance, type FastifyServerOptions } from "fastif
 import type { Db } from "./db/connection.js";
 import { errorHandler, notFoundHandler } from "./http/errors.js";
 import type { LlmClient } from "./llm/client.js";
+import { adRoutes } from "./modules/ads/routes.js";
 import { channelFormatRoutes } from "./modules/channel-formats/routes.js";
 import { jobOfferRoutes } from "./modules/job-offers/routes.js";
 
@@ -13,7 +14,7 @@ export interface AppDeps {
 
 export type ApiRoutes = (api: FastifyInstance, deps: AppDeps) => void;
 
-const ROUTES: ApiRoutes[] = [jobOfferRoutes, channelFormatRoutes];
+const ROUTES: ApiRoutes[] = [jobOfferRoutes, channelFormatRoutes, adRoutes];
 
 /** L'app senza avvio: il server la mette in ascolto, i test la usano con `inject`. */
 export function buildApp(deps: AppDeps): FastifyInstance {

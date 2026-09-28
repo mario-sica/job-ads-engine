@@ -78,7 +78,7 @@ function retryTurn(response: LlmResponse, errors: string[], toolUseId: string | 
           type: "tool_result",
           tool_use_id: toolUseId,
           is_error: true,
-          content: `L'annuncio non rispetta i vincoli. Correggi questi errori e richiama ${TOOL_NAME} con l'annuncio completo:\n${errors
+          content: `L'annuncio non rispetta i vincoli. Correggi questi errori e reinvia l'annuncio completo:\n${errors
             .map((e) => `- ${e}`)
             .join("\n")}`,
         },

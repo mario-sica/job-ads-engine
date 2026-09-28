@@ -47,11 +47,14 @@ describe("prompt", () => {
   it("eccezione per l'angle sul contratto, tono senza contrapposizioni né emoji, titoli semplici", () => {
     const indeed = buildPrompt(format("indeed", "text"), snapshotFor()).system;
     expect(indeed).toContain("Eccezione: se l'angle punta sul contratto");
-    expect(indeed).toContain("Non costruire mai una frase per contrasto o confronto");
-    expect(indeed).toContain("Niente emoji, in nessun campo.");
+    expect(indeed).toContain("non costruire frasi per contrasto");
+    expect(indeed).toContain("Niente emoji in nessun campo");
     // Le frasi da evitare non si citano: il modello tendeva a riprodurle.
     for (const quoted of ["non tetti", "non in ufficio", "non a caso", "emoji)"]) expect(indeed).not.toContain(quoted);
-    expect(indeed).toContain("I titoli sono il nome del ruolo in forma semplice");
+    expect(indeed).toContain("Titoli. Sono il nome del ruolo in forma semplice");
+    expect(indeed).toContain("È una direzione, non un testo da copiare");
+    // Il tool use è forzato: il prompt di sistema non nomina lo strumento.
+    expect(indeed).not.toContain("submit_ad");
     expect(buildPrompt(format("instagram", "image", "1:1"), snapshotFor()).system).not.toContain("Eccezione: se l'angle punta sul contratto");
   });
 

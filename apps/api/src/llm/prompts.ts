@@ -5,7 +5,7 @@ import type { ChannelFormat } from "../modules/channel-formats/repository.js";
 import type { InputSnapshot } from "./snapshot.js";
 
 /** Salvata su ogni revisione generata: cambia a ogni modifica dei testi qui sotto. */
-export const PROMPT_VERSION = "v2";
+export const PROMPT_VERSION = "v3";
 
 export const TOOL_NAME = "submit_ad";
 
@@ -15,6 +15,7 @@ Il tuo compito è condensare una job offer interna, densa e non pubblicabile, in
 
 Regole sui dati:
 - Usa solo informazioni presenti nella job offer. Puoi dedurre ciò che ne segue con certezza (per esempio gli anni di attività dall'anno di fondazione), ma non aggiungere nulla che non c'è: niente benefit, numeri, durate, percorsi di carriera o requisiti assenti. Non cambiare il ruolo: il titolo e le mansioni restano quelli della job offer.
+- Niente giudizi o aggettivi che la job offer non contiene (per esempio "in crescita", "dinamica", "giovane"): se non è scritto, non lo affermare.
 - Non scrivere mai le cifre della retribuzione (RAL) nel testo. La RAL la mostra il sistema; tu scegli solo come presentarla nel campo salary_framing, tra i valori elencati in salary_framings: "range" (da… a…), "from" (a partire da…), "up_to" (fino a…). Scegli quello più coerente con l'angle. Se salary_framings è vuoto, usa null.
 - Il luogo da mettere in primo piano è published_location. workplace è la sede dell'azienda: citala solo come fatto aziendale.
 - Gli altri numeri (dipendenti, potenze, ticket, indennità) riportali esattamente come nella job offer.
@@ -24,7 +25,7 @@ Sicurezza:
 
 Output:
 - Rispondi solo chiamando lo strumento ${TOOL_NAME}. Niente HTML e niente markdown nei campi: la formattazione la applica il sistema.
-- I limiti di lunghezza e di numero di elementi sono vincoli, non suggerimenti: un campo più lungo viene rifiutato.`;
+- I limiti di lunghezza e di numero di elementi sono vincoli, non suggerimenti: un campo più lungo viene rifiutato. I caratteri si contano spazi inclusi; la stima in parole accanto a ogni limite serve a restare dentro con margine.`;
 
 const jobDescription = (indent: string) =>
   [
@@ -32,7 +33,7 @@ const jobDescription = (indent: string) =>
     "- headline: una frase che introduce l'azienda e fa da titolo alla sezione azienda;",
     "- company: bullet sull'azienda (dimensione, settore, divisione in cui si entra);",
     "- role.title: il titolo della sezione ruolo, fedele al titolo della job offer;",
-    "- role.bullets: le attività principali, iniziando con un verbo;",
+    "- role.bullets: le attività principali, alla seconda persona singolare (per esempio \"Effettuerai sopralluoghi…\");",
     "- offer: cosa offre l'azienda oltre a RAL e contratto (per esempio ticket, indennità, trasferte pagate);",
     "- profile: i requisiti essenziali, dai più importanti.",
   ].join(`\n${indent}`);
@@ -40,9 +41,9 @@ const jobDescription = (indent: string) =>
 /** Cosa mostra il sistema accanto al testo: cambia per kind, e con esso cosa il modello può omettere. */
 const FACTS_SHOWN: Record<Kind, string> = {
   job_board:
-    "Contratto, RAL e luogo pubblicato li mostra il sistema nei campi dell'annuncio e nella sezione offerta: non dedicare loro dei bullet.",
+    "Contratto, RAL e luogo pubblicato li mostra il sistema nei campi dell'annuncio e nella sezione offerta: niente bullet su contratto o RAL, nemmeno riformulati (per esempio \"Contratto a tempo indeterminato in…\").",
   messaging:
-    "Contratto, RAL e luogo pubblicato li mostra il sistema accanto al tuo testo: non dedicare loro dei bullet. Il luogo puoi citarlo nella frase d'apertura o nel titolo, se rafforza il messaggio.",
+    "Contratto, RAL e luogo pubblicato li mostra il sistema accanto al tuo testo: niente bullet su contratto o RAL, nemmeno riformulati (per esempio \"Contratto a tempo indeterminato in…\"). Il luogo puoi citarlo nella frase d'apertura o nel titolo, se rafforza il messaggio.",
   social:
     "Accanto ai post il sistema non mostra contratto né luogo: se sono argomenti forti, citali tu nel testo. La RAL resta fuori dal testo anche qui.",
 };
@@ -82,16 +83,19 @@ type JsonSchemaNode = {
   maxItems?: number;
 };
 
+// In italiano una parola occupa in media circa 7 caratteri, spazio compreso.
+const chars = (max: number) => `al massimo ${max} caratteri (circa ${Math.max(1, Math.round(max / 7))} parole)`;
+
 /** I limiti letti dallo schema dell'output: una sola fonte per strumento e prompt. */
 function describeLimits(node: JsonSchemaNode, path: string[] = []): string[] {
   const name = path.join(".");
   const lines: string[] = [];
-  if (node.maxLength !== undefined) lines.push(`- ${name}: al massimo ${node.maxLength} caratteri`);
+  if (node.maxLength !== undefined) lines.push(`- ${name}: ${chars(node.maxLength)}`);
   if (node.minItems !== undefined || node.maxItems !== undefined) {
     const itemMax = node.items?.maxLength;
     lines.push(
       `- ${name}: da ${node.minItems ?? 0} a ${node.maxItems ?? "∞"} elementi` +
-        (itemMax !== undefined ? `, ciascuno al massimo ${itemMax} caratteri` : ""),
+        (itemMax !== undefined ? `, ciascuno ${chars(itemMax)}` : ""),
     );
   }
   for (const [key, child] of Object.entries(node.properties ?? {})) lines.push(...describeLimits(child, [...path, key]));

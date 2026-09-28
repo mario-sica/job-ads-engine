@@ -26,17 +26,17 @@ describe("prompt", () => {
   );
 
   it("i limiti della riga entrano nel prompt: l'hook del 9:16 arriva a 40", () => {
-    expect(buildPrompt(format("instagram", "image", "9:16"), snapshotFor()).system).toContain("- image.hook: al massimo 40 caratteri");
-    expect(buildPrompt(format("instagram", "image", "1:1"), snapshotFor()).system).toContain("- image.hook: al massimo 30 caratteri");
-    expect(buildPrompt(format("whatsapp", "text"), snapshotFor()).system).toContain("- text.bullets: da 3 a 6 elementi, ciascuno al massimo 120 caratteri");
+    expect(buildPrompt(format("instagram", "image", "9:16"), snapshotFor()).system).toContain("- image.hook: al massimo 40 caratteri (circa 6 parole)");
+    expect(buildPrompt(format("instagram", "image", "1:1"), snapshotFor()).system).toContain("- image.hook: al massimo 30 caratteri (circa 4 parole)");
+    expect(buildPrompt(format("whatsapp", "text"), snapshotFor()).system).toContain("- text.bullets: da 3 a 6 elementi, ciascuno al massimo 120 caratteri (circa 17 parole)");
   });
 
   it("la regola sui dati mostrati dal sistema dipende dal kind", () => {
-    expect(buildPrompt(format("indeed", "text"), snapshotFor()).system).toContain("non dedicare loro dei bullet");
-    expect(buildPrompt(format("whatsapp", "text"), snapshotFor()).system).toContain("non dedicare loro dei bullet");
+    expect(buildPrompt(format("indeed", "text"), snapshotFor()).system).toContain("niente bullet su contratto o RAL");
+    expect(buildPrompt(format("whatsapp", "text"), snapshotFor()).system).toContain("niente bullet su contratto o RAL");
     const social = buildPrompt(format("tiktok", "image_text", "9:16"), snapshotFor()).system;
     expect(social).toContain("il sistema non mostra contratto né luogo");
-    expect(social).not.toContain("non dedicare loro dei bullet");
+    expect(social).not.toContain("niente bullet su contratto o RAL");
   });
 
   it("solo i formati image_text chiedono un testo breve accanto all'immagine", () => {

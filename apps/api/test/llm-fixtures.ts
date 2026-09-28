@@ -14,3 +14,11 @@ export function llmSetup() {
   };
   return { jobOffer, formats, format, location: jobOffer.location };
 }
+
+/**
+ * Le fixture di `@job-ads-engine/content` hanno un'emoji nel messaggio WhatsApp
+ * ("☀️"): come output LLM finto non passerebbero il guardrail di tono.
+ */
+export function withoutEmoji<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value).replace(/\s*[\p{Extended_Pictographic}\uFE0F]/gu, "")) as T;
+}

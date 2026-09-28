@@ -11,6 +11,7 @@ import type { z } from "zod";
 import type { Json, RevisionInput } from "../modules/ads/types.js";
 import type { LlmClient, LlmResponse } from "./client.js";
 import { GenerationFailedError } from "./errors.js";
+import { findToneIssues } from "./guards.js";
 import { buildPrompt, PROMPT_VERSION, TOOL_NAME } from "./prompts.js";
 import { buildInputSnapshot, type SnapshotInput } from "./snapshot.js";
 
@@ -46,7 +47,7 @@ function toolUseOf(response: LlmResponse): Anthropic.ToolUseBlock | undefined {
   return response.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use" && b.name === TOOL_NAME);
 }
 
-/** Schema dell'output e guardrail RAL. Un output troncato o senza strumento è non conforme. */
+/** Schema dell'output, guardrail RAL e di tono. Un output troncato o senza strumento è non conforme. */
 function check(response: LlmResponse, schema: z.ZodType, salary: Salary | null): Check {
   const toolUse = toolUseOf(response);
   if (!toolUse) return { ok: false, errors: [`nessuna chiamata allo strumento ${TOOL_NAME}`], toolUseId: null };
@@ -58,6 +59,7 @@ function check(response: LlmResponse, schema: z.ZodType, salary: Salary | null):
   for (const path of findSalaryLeaks(toolUse.input, salary)) {
     errors.push(`${path}: contiene una cifra della RAL, che non va scritta nel testo`);
   }
+  errors.push(...findToneIssues(toolUse.input));
   return errors.length === 0 && parsed.success
     ? { ok: true, output: parsed.data as LlmOutput }
     : { ok: false, errors, toolUseId: toolUse.id };

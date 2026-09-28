@@ -8,7 +8,7 @@ import { generateContent } from "../src/llm/generate.js";
 import { PROMPT_VERSION, TOOL_NAME } from "../src/llm/prompts.js";
 import { buildInputSnapshot } from "../src/llm/snapshot.js";
 import type { ChannelFormat } from "../src/modules/channel-formats/repository.js";
-import { llmSetup } from "./llm-fixtures.js";
+import { llmSetup, withoutEmoji } from "./llm-fixtures.js";
 
 const { jobOffer, format, location } = llmSetup();
 
@@ -40,7 +40,7 @@ type Output = { salary_framing: string | null; text?: Record<string, unknown>; i
 
 function validOutput(target: ChannelFormat, framing: string | null = "range"): Output {
   const { facts: _, ...parts } = validContent(target);
-  return { salary_framing: framing, ...(parts as Omit<Output, "salary_framing">) };
+  return { salary_framing: framing, ...(withoutEmoji(parts) as Omit<Output, "salary_framing">) };
 }
 
 const input = (target: ChannelFormat, offer = jobOffer) => ({ target, jobOffer: offer, location, precision: "locality" as const, angle: "crescita" });
@@ -101,6 +101,18 @@ describe("generazione", () => {
     await generateContent(input(target), client);
     expect(requests).toHaveLength(2);
     expect(lastUserContent(requests[1]!)[0]!.content).toContain("text.offer.0: contiene una cifra della RAL");
+  });
+
+  it("tono: una contrapposizione o un'emoji provocano il retry con la spiegazione", async () => {
+    const target = format("instagram", "image", "4:5");
+    const base = validOutput(target);
+    const first = { ...base, image: { ...base.image, hook: "Grandi impianti, non tetti", subline: "Impianti FV 🔧" } };
+    const { client, requests } = fakeClient(toolUse(first), toolUse(validOutput(target)));
+
+    await generateContent(input(target), client);
+    const retry = lastUserContent(requests[1]!)[0]!.content as string;
+    expect(retry).toContain("image.hook: frase costruita per contrasto");
+    expect(retry).toContain("image.subline: contiene emoji");
   });
 
   it("provider non disponibile: l'errore passa senza retry", async () => {

@@ -4,6 +4,7 @@ import { formatLabel, locationLabel, STATUS_LABELS } from "../labels.js";
 import { ContentEditor } from "./ContentEditor.js";
 import { ErrorMessage } from "./ErrorMessage.js";
 import { Preview } from "./Preview.js";
+import { RevisionHistory } from "./RevisionHistory.js";
 
 interface Props {
   adId: number;
@@ -135,6 +136,8 @@ export function AdDetail({ adId, formats, onChanged }: Props) {
             readOnly={readOnly}
             onSaved={() => load().then(onChanged)}
           />
+          <h3>Storico delle revisioni</h3>
+          <RevisionHistory variant={variant} readOnly={readOnly} onRestored={() => load().then(onChanged)} />
         </div>
       )}
     </div>

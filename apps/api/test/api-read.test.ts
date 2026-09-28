@@ -4,18 +4,22 @@ import { describe, expect, it } from "vitest";
 import { testApp } from "./api-fixtures.js";
 
 describe("lettura di job offer e formati", () => {
-  it("GET /api/job-offers elenca la job offer seedata", async () => {
+  it("GET /api/job-offers elenca solo id, titolo, azienda e luogo", async () => {
     const res = await testApp().app.inject({ method: "GET", url: "/api/job-offers" });
     expect(res.statusCode).toBe(200);
-    const offers = res.json() as { id: string; location: { locality: string } }[];
-    expect(offers.map((o) => o.id)).toEqual(["jo_001"]);
-    expect(offers[0]).toMatchObject({ location: { locality: "Orzinuovi" } });
-    expect(offers[0]).not.toHaveProperty("raw");
+    const offers = res.json() as Record<string, unknown>[];
+    expect(offers.map((o) => o.id)).toContain("jo_001");
+    for (const offer of offers) expect(Object.keys(offer).sort()).toEqual(["company_name", "id", "location", "title"]);
   });
 
-  it("GET /api/job-offers/:id legge per id, 404 se non esiste", async () => {
+  it("GET /api/job-offers/:id restituisce il dettaglio completo; 404 se non esiste", async () => {
     const { app } = testApp();
-    expect((await app.inject({ method: "GET", url: "/api/job-offers/jo_001" })).json()).toMatchObject({ title: "Tecnico elettricista fotovoltaico" });
+    expect((await app.inject({ method: "GET", url: "/api/job-offers/jo_001" })).json()).toMatchObject({
+      title: "Tecnico elettricista fotovoltaico",
+      ral_min: 32000,
+      required_skills: ["Fotovoltaico industriale", "Cabine secondarie - MT/BT"],
+      role_description: expect.any(String),
+    });
     const missing = await app.inject({ method: "GET", url: "/api/job-offers/jo_999" });
     expect(missing.statusCode).toBe(404);
     expect(missing.json()).toMatchObject({ error: { code: "not_found", details: { entity: "job offer", id: "jo_999" } } });

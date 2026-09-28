@@ -17,7 +17,11 @@ export interface JobOffer extends FactsSource {
   location: Location;
 }
 
+/** Voce dell'elenco: quanto basta per scegliere una job offer, il dettaglio si legge per id. */
+export type JobOfferSummary = Pick<JobOffer, "id" | "title" | "company_name" | "location">;
+
 type JobOfferRow = Omit<JobOffer, "required_skills" | "location"> & { required_skills: string; location: string };
+type SummaryRow = Omit<JobOfferSummary, "location"> & { location: string };
 
 // `raw` resta nel DB come archivio del payload: non serve a chi legge.
 const SELECT = `
@@ -37,12 +41,17 @@ const toJobOffer = (row: JobOfferRow): JobOffer => ({
 });
 
 export function createJobOffersRepository(db: Db) {
-  const all = db.prepare(`${SELECT} ORDER BY jo.created_at DESC, jo.id`);
+  const all = db.prepare(`
+    SELECT jo.id, jo.title, jo.company_name, ${locationJson("l")} AS location
+    FROM job_offers jo
+    JOIN locations l ON l.id = jo.location_id
+    ORDER BY jo.created_at DESC, jo.id
+  `);
   const byId = db.prepare(`${SELECT} WHERE jo.id = ?`);
 
   return {
-    list(): JobOffer[] {
-      return (all.all() as JobOfferRow[]).map(toJobOffer);
+    list(): JobOfferSummary[] {
+      return (all.all() as SummaryRow[]).map((row) => ({ ...row, location: JSON.parse(row.location) as Location }));
     },
 
     get(id: string): JobOffer {

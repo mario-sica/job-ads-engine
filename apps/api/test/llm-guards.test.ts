@@ -20,6 +20,17 @@ describe("guardrail di tono", () => {
     ]);
   });
 
+  it.each([["Cerchiamo un giovane installatore"], ["Ambiente giovanile e dinamico"], ["Candidati se sei under 30"]])(
+    "segnala l'età nel testo: %s",
+    (text) => {
+      expect(findToneIssues({ text: { primary: text } })).toEqual([expect.stringContaining("text.primary: indica l'età")]);
+    },
+  );
+
+  it("non segnala l'età nella descrizione della foto", () => {
+    expect(findToneIssues({ image: { visual_brief: "Giovane tecnico che installa uno split a parete" } })).toEqual([]);
+  });
+
   it("indica il campo anche dentro le liste", () => {
     expect(findToneIssues({ text: { bullets: ["Ticket da 13 €", "Impianti veri"] } })[0]).toMatch(/^text\.bullets\.1:/);
   });

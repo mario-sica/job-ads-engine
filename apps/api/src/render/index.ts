@@ -14,6 +14,7 @@ import type { LocationInput } from "../modules/locations/repository.js";
 import { formatLocation } from "./format.js";
 import { renderCreativeHtml } from "./html/creative.js";
 import { renderJobSheetHtml } from "./html/job-sheet.js";
+import { fillSalaryPlaceholder } from "./salary-placeholder.js";
 import {
   renderCaptionText,
   renderChatMessageText,
@@ -48,9 +49,12 @@ export function renderPreview({ target, content, location, precision, jobTitle }
   // Il contenuto salvato è già valido; rileggerlo con lo schema dà tipi certi al renderer.
   const parsed = contentSchemaFor(target).parse(content) as ValidatedContent;
   const ctx: RenderContext = { facts: parsed.facts, location: formatLocation(location, precision), jobTitle };
+  // Prima si riempie {RAL}, poi si rende: anche l'adattamento del font misura il testo finale.
+  const text = fillSalaryPlaceholder(parsed.text, parsed.facts.salary);
+  const image = fillSalaryPlaceholder(parsed.image, parsed.facts.salary);
   return {
-    text: parsed.text === undefined ? null : renderText(target, parsed.text, ctx),
-    html: parsed.image === undefined ? null : renderImage(target, parsed.image, ctx),
+    text: text === undefined ? null : renderText(target, text, ctx),
+    html: image === undefined ? null : renderImage(target, image, ctx),
   };
 }
 

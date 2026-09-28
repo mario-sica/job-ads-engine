@@ -1,9 +1,10 @@
-import { contentSchemaFor } from "@job-ads-engine/content";
+import { contentSchemaFor, type Salary } from "@job-ads-engine/content";
 import type { AppDeps } from "../../app.js";
 import { AdArchivedError, InvalidContentError, issuesOf } from "../../errors.js";
 import { InvalidInputError } from "../../http/validation.js";
 import { generateContent } from "../../llm/generate.js";
 import { renderPreview, type Preview } from "../../render/index.js";
+import { findUnfillablePlaceholders } from "../../render/salary-placeholder.js";
 import { createChannelFormatsRepository } from "../channel-formats/repository.js";
 import { createJobOffersRepository } from "../job-offers/repository.js";
 import { createLocationsRepository, type Location, type LocationInput } from "../locations/repository.js";
@@ -103,6 +104,13 @@ export function createAdsService({ db, llm }: AppDeps) {
       const { ad } = editableVariant(variantId);
       const parsed = contentSchemaFor(formats.get(ad.channel_format_id)).safeParse(content);
       if (!parsed.success) throw new InvalidContentError(issuesOf(parsed.error));
+      const { facts, ...parts } = parsed.data as Json & { facts: { salary: Salary | null } };
+      const unfillable = findUnfillablePlaceholders(parts, facts.salary);
+      if (unfillable.length > 0) {
+        throw new InvalidContentError(
+          unfillable.map((line) => ({ path: line.slice(0, line.indexOf(": ")), message: line.slice(line.indexOf(": ") + 2) })),
+        );
+      }
       return ads.addRevision(variantId, { source: "manual", content: parsed.data as Json });
     },
 

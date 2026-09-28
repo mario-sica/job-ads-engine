@@ -72,6 +72,19 @@ describe("revisioni", () => {
     expect(history).toHaveLength(1);
   });
 
+  it("{RAL} nell'edit manuale: con la RAL l'anteprima mostra l'importo, senza RAL è un 422", async () => {
+    const { app, a } = await withAd();
+    const content = { ...a.current_revision.content, text: { ...a.current_revision.content.text, headline: "Tecnico con RAL {RAL}" } };
+    expect((await app.inject({ method: "POST", url: `/api/variants/${a.id}/revisions`, payload: { content } })).statusCode).toBe(201);
+    const { text } = (await app.inject({ method: "GET", url: `/api/variants/${a.id}/preview` })).json() as { text: { body: string } };
+    expect(text.body.replace(/\u00a0/g, " ")).toContain("Tecnico con RAL 32.000–38.000 €");
+
+    const facts = { ...(a.current_revision.content.facts as Record<string, unknown>), salary: null };
+    const res = await app.inject({ method: "POST", url: `/api/variants/${a.id}/revisions`, payload: { content: { ...content, facts } } });
+    expect(res.statusCode).toBe(422);
+    expect(res.json()).toMatchObject({ error: { code: "invalid_content", details: [{ path: "text.headline", message: expect.stringContaining("{RAL}") }] } });
+  });
+
   it("un body senza content è un 400, non un 422", async () => {
     const { app, a } = await withAd();
     expect((await app.inject({ method: "POST", url: `/api/variants/${a.id}/revisions`, payload: { testo: "x" } })).statusCode).toBe(400);

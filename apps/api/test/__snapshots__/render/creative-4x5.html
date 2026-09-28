@@ -20,14 +20,14 @@ body { background: #e8e8e8; display: flex; justify-content: center; padding: 24p
 .logos { display: flex; align-items: center; gap: 18px; font-size: 22px; }
 .logos .placeholder { width: 180px; height: 72px; }
 .logos .times { font-size: 36px; color: #5f6368; }
-.title { font-size: 84px; line-height: 1.2; }
+.title { font-size: calc(84px * var(--fit, 1)); line-height: 1.2; }
 .title mark { background: #ffd600; color: inherit; padding: 0 8px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
-.hook { font-size: 44px; font-weight: 800; text-transform: uppercase; color: #1848a0; }
-.subline { font-size: 34px; color: #4a4a4a; }
+.hook { font-size: calc(44px * var(--fit, 1)); font-weight: 800; text-transform: uppercase; color: #1848a0; }
+.subline { font-size: calc(34px * var(--fit, 1)); color: #4a4a4a; }
 .photo { flex: 1; min-height: 0; border-radius: 24px; font-size: 26px; padding: 32px; }
-.tall .title { font-size: 104px; }
-.tall .hook { font-size: 56px; }
-.tall .subline { font-size: 40px; }
+.tall .title { font-size: calc(104px * var(--fit, 1)); }
+.tall .hook { font-size: calc(56px * var(--fit, 1)); }
+.tall .subline { font-size: calc(40px * var(--fit, 1)); }
 
 </style>
 </head>

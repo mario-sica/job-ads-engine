@@ -21,9 +21,10 @@
 3. **Luoghi diversi dalla job offer.** Il luogo dell'annuncio è quello mostrato (il chip 📍 del foglio WhatsApp), con un livello di precisione. Uso un luogo per annuncio, come richiedono le job board: più aree significano più annunci. Nel copy il modello mette in primo piano il luogo dell'annuncio e può citare la sede come fatto aziendale, senza contraddizioni.
 4. **Formati con immagine.** L'LLM genera i campi testuali, un template HTML li impagina. Non genero immagini con AI né faccio generare HTML all'LLM: layout coerente, nessun markup rotto, e un cambio di grafica non richiede rigenerazioni. La foto è descritta (`visual_brief`), non generata: nelle creative d'esempio è una foto reale di un tecnico, non un'illustrazione.
 5. **Cosa è pubblicabile.** La job offer non contiene segreti evidenti: il problema è la densità. La proiezione esclude i metadati interni e riduce l'indirizzo alla località. Il resto è compito del prompt, cioè condensare scegliendo le informazioni che attraggono per quel canale e quell'angle.
-6. **Stati.** `draft`, `active`, `closed`, `archived` sull'annuncio. Un annuncio chiuso si può riattivare (una ricerca che riparte), uno attivo va chiuso prima di essere archiviato, e `archived` è terminale. Le varianti si accendono e si spengono con un flag. Contenuto e stato sono indipendenti.
-7. **Ripristino di una revisione.** Sposta il puntatore su una revisione esistente invece di copiarla in una nuova: niente contenuti duplicati, e una revisione generata resta tracciabile come `llm`. Il costo è che lo storico non registra quando è avvenuto il ripristino.
-8. **Le trappole negli esempi.** Gli annunci d'esempio contengono informazioni che la job offer non supporta:
+6. **Stati.** `draft`, `active`, `closed`, `archived` sull'annuncio. Un annuncio chiuso si può riattivare (una ricerca che riparte), uno attivo va chiuso prima di essere archiviato, e `archived` è terminale. Le varianti si accendono e si spengono con un flag. Contenuto e stato sono indipendenti, con un'eccezione: un annuncio archiviato è in sola lettura, perché "archiviato" deve voler dire che nessuno lo tocca più.
+7. **Luogo di default e precisione.** Se la richiesta non indica un luogo, l'annuncio usa quello della job offer. La precisione di default dipende dal canale: indirizzo completo per le job board, che lo richiedono, località per gli altri. Al modello arriva comunque al massimo la località.
+8. **Ripristino di una revisione.** Sposta il puntatore su una revisione esistente invece di copiarla in una nuova: niente contenuti duplicati, e una revisione generata resta tracciabile come `llm`. Il costo è che lo storico non registra quando è avvenuto il ripristino.
+9. **Le trappole negli esempi.** Gli annunci d'esempio contengono informazioni che la job offer non supporta:
    - "RAL iniziale da €38'000", mentre il minimo è 32.000;
    - una crescita professionale mai citata, e descritta in due modi diversi su Indeed e su WhatsApp;
    - "trasferte di 2/3 giorni", dove la job offer dice "più giorni".
@@ -33,8 +34,8 @@
    - un guardrail blocca le sue cifre nel testo libero;
    - il prompt vieta informazioni assenti dall'input;
    - un dettaglio legittimo ma non presente nei dati resta possibile con l'edit manuale.
-9. **Il formato decide le parti, il kind la loro forma.** Dagli esempi emerge che il foglio WhatsApp contiene lo stesso corpo di Indeed, più intestazione ed etichette. Invece di uno schema per canale, compongo blocchi riusabili.
-10. **Proporzioni.** 1:1, 4:5 e 9:16 cambiano layout e limiti (override in `specs`), non la forma del contenuto: una sola `Creative` e un solo template HTML che si adatta alle dimensioni. Template distinti per proporzione sarebbero più curati, ma la priorità va alla generazione.
+10. **Il formato decide le parti, il kind la loro forma.** Dagli esempi emerge che il foglio WhatsApp contiene lo stesso corpo di Indeed, più intestazione ed etichette. Invece di uno schema per canale, compongo blocchi riusabili.
+11. **Proporzioni.** 1:1, 4:5 e 9:16 cambiano layout e limiti (override in `specs`), non la forma del contenuto: una sola `Creative` e un solo template HTML che si adatta alle dimensioni. Template distinti per proporzione sarebbero più curati, ma la priorità va alla generazione.
 
 ## Cosa ho sacrificato
 

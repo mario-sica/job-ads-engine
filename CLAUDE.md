@@ -156,7 +156,7 @@ Gli step 1–4 committano file **già presenti** nella cartella: rileggili, veri
     - `GenerationFailedError`: output non conforme anche dopo il retry, con l'elenco degli errori.
   - Test con client finto: successo, retry riuscito, doppio fallimento, leak della RAL, provider non disponibile, istruzioni iniettate in un campo (nel prompt costruito compaiono solo dentro il blocco dati).
   - Aggiorna `prompts.md`: prompt finali e log delle iterazioni.
-- [ ] **9. `feat/api`**: endpoint Fastify, tutti sotto il prefisso `/api` (proposta da confermare).
+- [x] **9. `feat/api`**: endpoint Fastify, tutti sotto il prefisso `/api` (proposta da confermare).
   - Lettura:
     - `GET /api/job-offers`, `GET /api/job-offers/:id`;
     - `GET /api/channel-formats` (con kind e specs: la UI costruisce da lì lo schema per validare gli edit);

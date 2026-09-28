@@ -1,7 +1,5 @@
 # Architettura
 
-> 🚧 Bozza: modello dati e contenuto definitivi; endpoint e renderer da completare (`TODO`).
-
 ## 1. Come è diviso il progetto
 
 Monorepo con npm workspaces: tre pacchetti con responsabilità separate e un solo comando per avviarli (`npm run dev`).
@@ -11,7 +9,9 @@ Monorepo con npm workspaces: tre pacchetti con responsabilità separate e un sol
 ├── packages/
 │   └── content/             # contratto del contenuto, condiviso da api e web
 │       ├── src/
+│       │   ├── index.ts       punto d'ingresso del pacchetto
 │       │   ├── types.ts       kind, formati, parti ed errori
+│       │   ├── primitives.ts  righe, liste e merge dei limiti
 │       │   ├── blocks.ts      blocchi: limiti, default e schema Zod
 │       │   ├── facts.ts       dati deterministici dalla job offer
 │       │   ├── specs.ts       lettura di channel_formats.specs
@@ -23,10 +23,10 @@ Monorepo con npm workspaces: tre pacchetti con responsabilità separate e un sol
 │   │   ├── db/
 │   │   │   ├── migrations/  # schema SQL numerato, applicato in ordine
 │   │   │   └── seed/        # canali, formati con i loro limiti, job offer (traccia + fittizie)
-│   │   ├── data/            # gyver.db, già popolato                          (TODO)
+│   │   ├── data/            # DB di lavoro e copia della demo, creati all'avvio (non versionati)
 │   │   ├── src/
 │   │   │   ├── config.ts    # variabili d'ambiente validate, .env dalla root
-│   │   │   ├── db/          # connessione, migrazioni, seed e CLI db:*
+│   │   │   ├── db/          # connessione, migrazioni, seed, esempi (samples) e demo; CLI db:*, samples, demo
 │   │   │   ├── modules/     # job-offers, channel-formats, locations, ads: routes → service → repository
 │   │   │   ├── llm/         # input_snapshot, prompt per kind, client Anthropic, validazione e retry
 │   │   │   ├── render/      # formattazione it-IT, testo per kind, HTML di foglio A4 e creative
@@ -41,7 +41,9 @@ Monorepo con npm workspaces: tre pacchetti con responsabilità separate e un sol
 │       │   ├── create-ad.ts     dal modulo di creazione al corpo di POST /ads
 │       │   └── components/      elenco, creazione, dettaglio, anteprima, edit, storico
 │       └── test/            # logica pura: client, modulo di edit, creazione
-└── package.json             # workspaces e script unici: dev, test, typecheck
+├── demo_db/
+│   └── gyver.db             # annunci d'esempio generati davvero (versionato, mai aperto direttamente)
+└── package.json             # workspaces e script unici: dev, dev:demo, test, typecheck, db:reset
 ```
 
 **Perché un pacchetto `content` separato.** Il contratto del contenuto ha tre consumatori:
@@ -55,6 +57,8 @@ Tenerlo in un pacchetto dedicato evita di duplicare tipi e regole tra frontend e
 - **routes**: HTTP, validazione dell'input, mapping degli errori. Nessuna logica di dominio.
 - **service**: orchestrazione. Carica la job offer, chiama l'LLM, valida l'output e persiste in transazione.
 - **repository**: solo SQL.
+
+**Due database.** `npm run dev` lavora su `apps/api/data/gyver.db`, creato pulito da migrazioni e seed (job offer e canali, nessun annuncio). `npm run dev:demo` lavora su `apps/api/data/demo.db`, una copia di `demo_db/gyver.db` fatta al primo avvio: le prove non toccano mai il file versionato, e `npm run demo:reset` ricrea la copia. Nessuno dei due file di lavoro è versionato.
 
 **In sviluppo** `npm run dev` avvia api e web insieme (`concurrently`, output etichettato per processo). Vite inoltra le chiamate `/api` al backend, quindi niente URL hardcoded e niente CORS.
 

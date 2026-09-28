@@ -21,14 +21,14 @@ describe("seed", () => {
   it("inserisce canali, formati, luogo e job offer", () => {
     const db = migratedDb();
     seed(db);
-    expect(counts(db)).toEqual({ channels: 4, channel_formats: 12, locations: 5, job_offers: 5 });
+    expect(counts(db)).toEqual({ channels: 4, channel_formats: 12, locations: 10, job_offers: 10 });
   });
 
   it("legge la job offer della traccia e quelle fittizie da file separati", () => {
     const db = migratedDb();
     seed(db);
     const ids = db.prepare("SELECT id FROM job_offers ORDER BY id").pluck().all();
-    expect(ids).toEqual(["jo_001", "jo_101", "jo_102", "jo_103", "jo_104"]);
+    expect(ids).toEqual(["jo_001", "jo_101", "jo_102", "jo_103", "jo_104", "jo_105", "jo_106", "jo_107", "jo_108", "jo_109"]);
     // I casi limite delle fittizie arrivano intatti: niente RAL, solo il massimo, campi assenti.
     const row = (id: string) => db.prepare("SELECT ral_min, ral_max, currency, company_description FROM job_offers WHERE id = ?").get(id);
     expect(row("jo_102")).toMatchObject({ ral_min: null, ral_max: null, currency: null });

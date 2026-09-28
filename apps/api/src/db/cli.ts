@@ -2,7 +2,7 @@ import { rmSync } from "node:fs";
 import { loadConfig, loadEnvFile } from "../config.js";
 import { openDatabase } from "./connection.js";
 import { migrate } from "./migrate.js";
-import { seed } from "./seed.js";
+import { logSeedWarnings, seed } from "./seed.js";
 
 const COMMANDS = ["migrate", "seed", "reset"] as const;
 type Command = (typeof COMMANDS)[number];
@@ -24,8 +24,9 @@ function run(command: Command): void {
     const applied = migrate(db);
     console.log(applied.length ? `Migrazioni applicate: ${applied.join(", ")}` : "Nessuna migrazione da applicare");
     if (command !== "migrate") {
-      seed(db);
+      const warnings = seed(db);
       console.log("Seed applicato");
+      logSeedWarnings(warnings);
     }
   } finally {
     db.close();

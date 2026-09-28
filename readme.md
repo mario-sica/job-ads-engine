@@ -51,7 +51,7 @@ Con l'interfaccia su `http://localhost:5173`:
    - A sinistra c'è l'elenco degli annunci. Filtralo per job offer, canale o stato e cliccane uno.
    - A destra compaiono canale, formato, luogo e stato, le schede delle varianti (A e B, con il loro angle) e l'anteprima: il testo del canale e, per i formati con immagine, la pagina impaginata.
 2. **Crea un annuncio** (serve la chiave).
-   - Premi **+ Nuovo annuncio** e scegli una job offer (per esempio `jo_001`) e un canale con formato (per esempio *WhatsApp · testo*).
+   - Premi **+ Nuovo annuncio** e scegli una job offer (per esempio `jo_001`, oppure [una tua](#aggiungere-una-job-offer)) e un canale con formato (per esempio *WhatsApp · testo*).
    - Lascia il luogo della job offer, oppure scegli *un altro luogo* e compila almeno la località.
    - Scrivi un angle per ogni variante, per esempio "trasferte pagate" per A e "stabilità del contratto" per B.
    - Premi **Genera annuncio**. Dopo qualche decina di secondi l'annuncio compare in elenco, già aperto, in stato *bozza*.
@@ -64,6 +64,106 @@ Con l'interfaccia su `http://localhost:5173`:
 7. **Pubblica e chiudi**: i pulsanti di stato mostrano solo le transizioni ammesse (*bozza → attivo → chiuso → archiviato*). Un annuncio archiviato si consulta ma non si modifica.
 
 Lo stesso flusso con l'API è nella sezione [API](#api).
+
+## Aggiungere una job offer
+
+Le job offer non si creano dall'interfaccia né dall'API: per questo servizio sono un input che arriva da altri sistemi, e qui si caricano da file JSON (il *seed*). Per aggiungerne una bastano un file e un comando, **senza riavviare l'app**.
+
+### 1. Crea il file
+
+Crea un file nella cartella `apps/api/db/seed/`. Il nome deve **iniziare con `job_offers` e finire con `.json`**, per esempio `apps/api/db/seed/job_offers.mie.json`: un file con un altro nome viene ignorato. Meglio non modificare `job_offers.json` e `job_offers.fictional.json`, che sono i dati consegnati.
+
+Il file contiene **un array** (tra `[` e `]`), anche per una sola job offer. Copia questo modello e cambia i valori:
+
+```json
+[
+  {
+    "job_offer_id": "jo_200",
+    "title": "Elettricista industriale",
+    "company_name": "Impianti Rossi Srl",
+    "status": "active",
+    "created_at": "2026-09-28T09:00:00.000Z",
+    "location": {
+      "street_name": "Via Roma",
+      "street_number": "10",
+      "postal_code": "25121",
+      "locality": "Brescia",
+      "province": "Brescia",
+      "province_code": "BS",
+      "region": "Lombardia",
+      "country_code": "IT"
+    },
+    "contract_type": "Tempo indeterminato",
+    "min_exp_years": 3,
+    "max_exp_years": null,
+    "ral_min": 28000,
+    "ral_max": 32000,
+    "currency": "EUR",
+    "required_skills": ["Quadri elettrici", "PLC Siemens"],
+    "role_description": "Ti occuperai di:\n\n- Cablare quadri elettrici di automazione\n- Fare manutenzione sulle linee dei clienti",
+    "location_and_hours": "- Sede di Brescia, cantieri in provincia\n- Dal lunedì al venerdì, 8:00-17:00",
+    "company_description": "Impianti Rossi, dal 1990 a Brescia\n\n- 40 dipendenti\n- Impianti elettrici industriali",
+    "requirements_description": "- Almeno 3 anni di esperienza come elettricista\n- Patente B",
+    "compensation_package": "- RAL da 28.000 a 32.000 €\n- Buoni pasto\n- Furgone aziendale"
+  }
+]
+```
+
+Per più job offer, separa gli oggetti con una virgola: `[ {...}, {...} ]`.
+
+| Campo | Obbligatorio | Regole |
+|---|---|---|
+| `job_offer_id` | sì | Testo **unico** tra tutti i file, per esempio `jo_200`. Gli id già usati sono `jo_001` e `jo_101`–`jo_109` |
+| `title`, `company_name`, `status`, `created_at` | sì | Testo non vuoto. `status` è informativo (per esempio `active`), `created_at` è una data ISO e ordina l'elenco, dalla più recente |
+| `location` | sì | Almeno uno tra `locality`, `province` e `region`; gli altri campi si possono omettere. `country_code` vale `IT` se manca. Via e civico non arrivano mai al modello |
+| `ral_min`, `ral_max` | no | Numeri interi **senza virgolette** (`28000`, non `"28.000"`), positivi, con `ral_min` non maggiore di `ral_max`. Basta anche uno solo dei due |
+| `currency` | se c'è una RAL | Codice di tre lettere, per esempio `EUR`. Senza valuta la RAL viene ignorata: non entra nei dati dell'annuncio |
+| `min_exp_years`, `max_exp_years` | no | Anni interi, con il minimo non maggiore del massimo |
+| `contract_type` | no | Testo non vuoto, oppure `null` |
+| `required_skills` | no | Elenco di testi non vuoti; se manca vale `[]` |
+| `role_description`, `location_and_hours`, `company_description`, `requirements_description`, `compensation_package` | no | Testo libero, con `\n` per andare a capo e `- ` per gli elenchi. È il materiale da cui il modello scrive il copy: usa solo informazioni vere, perché il modello non ne aggiunge |
+
+Un campo facoltativo si può omettere oppure mettere a `null`.
+
+### 2. Carica la job offer
+
+- **Con l'app accesa** (`npm run dev`): apri un **secondo terminale** nella cartella principale e lancia il seed; poi **ricarica la pagina** del browser. Non serve riavviare.
+
+  ```bash
+  npm run db:seed -w @job-ads-engine/api
+  ```
+
+- **Con l'app accesa in modalità demo** (`npm run dev:demo`): il comando sopra scrive nel DB di `npm run dev`. Per la demo indica il suo database:
+  - Linux e macOS: `DATABASE_PATH=apps/api/data/demo.db npm run db:seed -w @job-ads-engine/api`
+  - Windows (PowerShell): `$env:DATABASE_PATH="apps/api/data/demo.db"; npm run db:seed -w @job-ads-engine/api`
+- **Con l'app spenta**: avviala normalmente (`npm run dev` o `npm run dev:demo`). Entrambi gli avvii caricano il seed da soli.
+
+Il seed è ripetibile: carica solo le job offer nuove e non tocca annunci, varianti e revisioni.
+
+### 3. Controlla l'esito
+
+Se è tutto a posto, il comando stampa `Seed applicato` e nient'altro. Se qualcosa non va, **l'app non si blocca**: la job offer sbagliata viene scartata, le altre si caricano, e il comando stampa un avviso con file, id e campo da correggere, per esempio:
+
+```
+Attenzione, seed delle job offer: 1 avviso
+  - job_offers.mie.json › jo_200: scartata. ral_min: min supera max
+Le altre job offer sono state caricate. Correggi il file e rilancia: npm run db:seed -w @job-ads-engine/api
+```
+
+Con l'app accesa gli stessi avvisi compaiono all'avvio, nelle righe `[api]`. Correggi il file e rilancia il comando del passo 2.
+
+Quando la job offer è caricata, compare nel menu **+ Nuovo annuncio** dell'interfaccia, e l'API la restituisce:
+
+```bash
+curl -s "localhost:3000/api/job-offers/jo_200" | jq
+```
+
+### Modificare o togliere una job offer già caricata
+
+Una job offer caricata **non si aggiorna** dal file: se lo modifichi, il seed lo segnala con un avviso (`già caricata con dati diversi`) e lascia i dati com'erano. È voluto, perché gli annunci già generati si basano su quei dati. Hai due strade:
+
+- **Senza perdere nulla**: salva i dati corretti con un **nuovo `job_offer_id`** (per esempio `jo_200b`) e genera gli annunci da quella.
+- **Ripartendo da zero**: ferma l'app e lancia `npm run db:reset` (per la demo `npm run demo:reset`, poi `npm run dev:demo`). Il DB si ricrea dai file, con le modifiche e senza le job offer tolte, ma **si perdono tutti gli annunci generati**.
 
 ## Annunci d'esempio
 
@@ -125,10 +225,11 @@ Tutte facoltative. Il file `.env` sta nella cartella principale; le variabili gi
 - `apps/api/db/seed/001_channels.sql`: canali, combinazioni canale e formato pubblicabili e relativi limiti (`specs`).
 - `apps/api/db/seed/job_offers.json`: la job offer della traccia (`jo_001`), invariata.
 - `apps/api/db/seed/job_offers.fictional.json`: nove job offer inventate (`jo_101`–`jo_109`).
+- `apps/api/db/seed/job_offers*.json`: il seed legge tutti i file con questo nome, quindi anche quelli aggiunti da te ([come aggiungere una job offer](#aggiungere-una-job-offer)).
 - `demo_db/gyver.db`: gli annunci d'esempio. È versionato e non si apre mai direttamente: `npm run dev:demo` ne usa una copia.
 - `apps/api/data/`: i due database di lavoro (`gyver.db` e `demo.db`), creati all'avvio e non versionati.
 
-Migrazioni e seed sono ripetibili: le migrazioni applicate sono registrate in `schema_migrations`, e il seed non tocca ciò che esiste già. Si possono lanciare anche singolarmente:
+Migrazioni e seed sono ripetibili: le migrazioni applicate sono registrate in `schema_migrations`, e il seed non tocca ciò che esiste già. Una job offer non valida non blocca il seed: viene scartata con un avviso. Si possono lanciare anche singolarmente:
 
 ```bash
 npm run db:migrate -w @job-ads-engine/api   # solo migrazioni
@@ -194,6 +295,8 @@ Gli errori hanno sempre la forma `{ "error": { "code", "message", "details" } }`
 - **Avvisi `EBADENGINE` durante `npm install`, o test e interfaccia che non partono**: la versione di Node è precedente alla 22.12.
 - **"chiave API assente" (`503`) quando generi**: manca `ANTHROPIC_API_KEY` nel `.env`, oppure il server non è stato riavviato dopo averla aggiunta.
 - **"output del modello non conforme" (`502`)**: il modello ha sbagliato due volte di fila (di solito per la lunghezza dei testi nell'immagine). Non si salva nulla: rigenera.
+- **La job offer che ho aggiunto non compare**: controlla che il file sia in `apps/api/db/seed/` e che il nome inizi con `job_offers` e finisca con `.json`; leggi gli avvisi del seed; ricarica la pagina del browser. Con `npm run dev:demo` accesa il seed va lanciato sul DB della demo ([passo 2](#2-carica-la-job-offer)).
+- **Ho modificato una job offer ma non cambia nulla**: una job offer già caricata non si aggiorna dal file ([cosa fare](#modificare-o-togliere-una-job-offer-già-caricata)).
 - **Nell'elenco non ci sono annunci**: hai avviato con `npm run dev`, che parte senza annunci. Per gli esempi usa `npm run dev:demo`.
 
 ## Test

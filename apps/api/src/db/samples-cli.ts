@@ -7,7 +7,7 @@ import { createChannelFormatsRepository } from "../modules/channel-formats/repos
 import { openDatabase } from "./connection.js";
 import { migrate } from "./migrate.js";
 import { SAMPLES, withAttemptLog } from "./samples.js";
-import { seed } from "./seed.js";
+import { logSeedWarnings, seed } from "./seed.js";
 
 /*
  * Genera gli annunci d'esempio con l'API reale, attraverso lo stesso service
@@ -23,7 +23,7 @@ async function main() {
   const db = openDatabase(config.databasePath);
   try {
     migrate(db);
-    seed(db);
+    logSeedWarnings(seed(db));
     const llm = withAttemptLog(
       createAnthropicClient({ apiKey: config.anthropicApiKey, model: config.llmModel, timeoutSeconds: config.llmTimeoutSeconds }),
       (line) => console.log(line),

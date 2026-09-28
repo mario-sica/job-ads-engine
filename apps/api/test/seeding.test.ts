@@ -49,6 +49,10 @@ describe("seed", () => {
     expect(location).toMatchObject({ locality: "Orzinuovi", province_code: "BS", street_number: "27" });
   });
 
+  it("i file consegnati non producono avvisi", () => {
+    expect(seed(migratedDb())).toEqual([]);
+  });
+
   it("è ripetibile", () => {
     const db = migratedDb();
     seed(db);
@@ -63,10 +67,12 @@ describe("seed", () => {
       if (dir) rmSync(dir, { recursive: true, force: true });
     });
 
-    const withOffers = (offers: unknown[]) => {
+    /** Cartella di seed con `job_offers.json` e, se servono, altri file scritti così come sono. */
+    const withOffers = (offers: unknown[], files: Record<string, string> = {}) => {
       dir = mkdtempSync(join(tmpdir(), "jae-seed-"));
       copyFileSync(join(SEED_DIR, "001_channels.sql"), join(dir, "001_channels.sql"));
       writeFileSync(join(dir, "job_offers.json"), JSON.stringify(offers));
+      for (const [name, content] of Object.entries(files)) writeFileSync(join(dir, name), content);
       return dir;
     };
 
@@ -90,11 +96,67 @@ describe("seed", () => {
       expect(counts(db)).toMatchObject({ locations: 2, job_offers: 4 });
     });
 
-    it("una job offer non valida blocca tutto il seed", () => {
+    const ids = (db: Db) => db.prepare("SELECT id FROM job_offers ORDER BY id").pluck().all();
+
+    it("una job offer non valida si scarta con un avviso, le altre si caricano", () => {
       const db = migratedDb();
       const { job_offer_id: _, ...withoutId } = offer("x", { locality: "Orzinuovi" });
-      expect(() => seed(db, withOffers([offer("a", { locality: "Orzinuovi" }), withoutId]))).toThrow();
-      expect(counts(db)).toEqual({ channels: 0, channel_formats: 0, locations: 0, job_offers: 0 });
+      const warnings = seed(db, withOffers([offer("a", { locality: "Orzinuovi" }), withoutId, { ...offer("b", {}), ral_min: "28000" }]));
+      expect(ids(db)).toEqual(["a"]);
+      expect(counts(db)).toMatchObject({ channels: 4, channel_formats: 12 });
+      expect(warnings).toHaveLength(2);
+      expect(warnings[0]).toMatch(/^job_offers\.json › elemento 2: scartata\. job_offer_id:/);
+      expect(warnings[1]).toMatch(/^job_offers\.json › b: scartata\. .*ral_min:/);
+      expect(warnings[1]).toContain("locality, province e region");
+    });
+
+    it("un file illeggibile o che non è un array non blocca gli altri file", () => {
+      const db = migratedDb();
+      const warnings = seed(db, withOffers([offer("a", { locality: "Lodi" })], {
+        "job_offers.rotto.json": "[{",
+        "job_offers.oggetto.json": JSON.stringify(offer("b", { locality: "Lodi" })),
+        "job_offers.mie.json": JSON.stringify([offer("c", { locality: "Lodi" })]),
+        "mie.json": JSON.stringify([offer("d", { locality: "Lodi" })]),
+      }));
+      expect(ids(db)).toEqual(["a", "c"]);
+      expect(warnings).toEqual([
+        "job_offers.oggetto.json: file ignorato, deve contenere un array di job offer ([ {...}, {...} ])",
+        expect.stringMatching(/^job_offers\.rotto\.json: file ignorato, JSON non valido/),
+      ]);
+    });
+
+    it.each([
+      ["RAL minima oltre la massima", { ral_min: 40000, ral_max: 30000, currency: "EUR" }, "ral_min: min supera max"],
+      ["valuta non ISO", { ral_max: 30000, currency: "euro" }, "currency:"],
+      ["RAL negativa", { ral_min: -1, currency: "EUR" }, "ral_min:"],
+      ["esperienza minima oltre la massima", { min_exp_years: 5, max_exp_years: 2 }, "min_exp_years: min_years supera max_years"],
+      ["competenza vuota", { required_skills: ["PLC", ""] }, "required_skills.1:"],
+      ["contratto vuoto", { contract_type: "" }, "contract_type:"],
+    ])("scarta i facts incoerenti con il contratto: %s", (_, fields, issue) => {
+      const db = migratedDb();
+      const warnings = seed(db, withOffers([{ ...offer("a", { locality: "Lodi" }), ...fields }]));
+      expect(ids(db)).toEqual([]);
+      expect(warnings).toHaveLength(1);
+      expect(warnings[0]).toContain(issue);
+    });
+
+    it("un id ripetuto in un altro file si scarta, la prima occorrenza resta", () => {
+      const db = migratedDb();
+      const warnings = seed(db, withOffers([offer("a", { locality: "Lodi" })], {
+        "job_offers.mie.json": JSON.stringify([{ ...offer("a", { locality: "Lodi" }), title: "Altro" }]),
+      }));
+      expect(db.prepare("SELECT title FROM job_offers WHERE id = 'a'").pluck().get()).toBe("Tecnico");
+      expect(warnings).toEqual(["job_offers.mie.json › a: scartata, id già usato in job_offers.json"]);
+    });
+
+    it("una job offer già caricata non si aggiorna, e se il file è cambiato lo segnala", () => {
+      const db = migratedDb();
+      expect(seed(db, withOffers([offer("a", { locality: "Lodi" })]))).toEqual([]);
+      expect(seed(db, withOffers([offer("a", { locality: "Lodi" })]))).toEqual([]);
+
+      const warnings = seed(db, withOffers([{ ...offer("a", { locality: "Lodi" }), title: "Cambiato" }]));
+      expect(db.prepare("SELECT title FROM job_offers WHERE id = 'a'").pluck().get()).toBe("Tecnico");
+      expect(warnings).toEqual([expect.stringMatching(/^job_offers\.json › a: già caricata con dati diversi.*npm run db:reset/)]);
     });
   });
 });

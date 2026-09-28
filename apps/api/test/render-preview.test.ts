@@ -20,7 +20,7 @@ const location: LocationInput = {
 
 describe("anteprima per ogni combinazione del seed", () => {
   it.each(formats.map((f) => [`${f.channel_code} ${f.format} ${f.aspect_ratio ?? ""}`, f] as const))("%s", (_, target) => {
-    const preview = renderPreview({ target, content: validContent(target), location, precision: "locality" });
+    const preview = renderPreview({ target, content: validContent(target), location, precision: "locality", jobTitle: "Tecnico" });
     expect(preview.text !== null).toBe(target.format !== "image");
     expect(preview.html !== null).toBe(target.format !== "text");
     if (preview.html) expect(preview.html).toContain(`width: ${target.specs.width_px}px; height: ${target.specs.height_px}px;`);
@@ -32,13 +32,18 @@ describe("anteprima", () => {
 
   it("il luogo segue la precisione dell'annuncio", () => {
     const at = (precision: "address" | "locality" | "province") =>
-      renderPreview({ target: indeed, content: validContent(indeed), location, precision }).text?.fields?.Luogo;
+      renderPreview({ target: indeed, content: validContent(indeed), location, precision, jobTitle: "Tecnico" }).text?.fields?.Luogo;
     expect(at("address")).toBe("Via Artigianato 27, 25034 Orzinuovi (BS)");
     expect(at("locality")).toBe("Orzinuovi (BS)");
     expect(at("province")).toBe("Provincia di Brescia");
   });
 
+  it("il campo Titolo di Indeed è il titolo della job offer", () => {
+    const preview = renderPreview({ target: indeed, content: validContent(indeed), location, precision: "locality", jobTitle: "Tecnico elettricista fotovoltaico" });
+    expect(preview.text?.fields?.Titolo).toBe("Tecnico elettricista fotovoltaico");
+  });
+
   it("un contenuto non valido per il formato è rifiutato", () => {
-    expect(() => renderPreview({ target: indeed, content: { facts: FACTS }, location, precision: "locality" })).toThrow(ZodError);
+    expect(() => renderPreview({ target: indeed, content: { facts: FACTS }, location, precision: "locality", jobTitle: "Tecnico" })).toThrow(ZodError);
   });
 });

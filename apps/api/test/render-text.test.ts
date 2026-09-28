@@ -9,7 +9,7 @@ import {
   type RenderContext,
 } from "../src/render/text.js";
 
-const ctx: RenderContext = { facts: FACTS, location: "Orzinuovi (BS)" };
+const ctx: RenderContext = { facts: FACTS, location: "Orzinuovi (BS)", jobTitle: "Tecnico elettricista fotovoltaico" };
 const plain = (s: string) => s.replace(/ /g, " ");
 
 describe("sezioni della JobDescription", () => {
@@ -38,7 +38,7 @@ describe("testo per kind", () => {
   it("Indeed: campi dai facts e descrizione", async () => {
     const text = renderJobBoardText(JOB_DESCRIPTION, ctx);
     expect(text.fields).toMatchObject({
-      Titolo: JOB_DESCRIPTION.role.title,
+      Titolo: "Tecnico elettricista fotovoltaico",
       Azienda: "AB Group SpA",
       Luogo: "Orzinuovi (BS)",
       Contratto: "Tempo indeterminato",
@@ -52,7 +52,7 @@ describe("testo per kind", () => {
 
   it("Indeed senza facts opzionali omette i campi vuoti", () => {
     const facts = { ...FACTS, salary: null, contract_type: null, experience: { min_years: null, max_years: null }, skills: [] };
-    expect(Object.keys(renderJobBoardText(JOB_DESCRIPTION, { facts, location: "Orzinuovi (BS)" }).fields!)).toEqual([
+    expect(Object.keys(renderJobBoardText(JOB_DESCRIPTION, { ...ctx, facts }).fields!)).toEqual([
       "Titolo",
       "Azienda",
       "Luogo",

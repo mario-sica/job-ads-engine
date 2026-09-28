@@ -3,6 +3,8 @@ import { formatExperience, formatSalary, formatSalaryAmount } from "./format.js"
 
 export interface RenderContext {
   facts: Facts;
+  /** Il titolo della job offer: è il titolo dell'annuncio sulle job board. */
+  jobTitle: string;
   /** Luogo dell'annuncio, già formattato secondo la precisione. */
   location: string;
 }
@@ -35,10 +37,10 @@ const bulletList = (bullets: string[], marker: string) => bullets.map((b) => `${
 
 const blocks = (...parts: (string | null | undefined)[]) => parts.filter(present).join("\n\n");
 
-export function renderJobBoardText(description: JobDescription, { facts, location }: RenderContext): RenderedText {
+export function renderJobBoardText(description: JobDescription, { facts, location, jobTitle }: RenderContext): RenderedText {
   const fields = Object.fromEntries(
     Object.entries({
-      Titolo: description.role.title,
+      Titolo: jobTitle,
       Azienda: facts.company_name,
       Luogo: location,
       RAL: facts.salary && formatSalaryAmount(facts.salary),

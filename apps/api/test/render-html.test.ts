@@ -12,7 +12,7 @@ const formats = createChannelFormatsRepository(seededDb()).list();
 const specsOf = (channel: string, ratio: string) =>
   formats.find((f) => f.channel_code === channel && f.format === "image" && f.aspect_ratio === ratio)!.specs;
 
-const ctx: RenderContext = { facts: FACTS, location: "Orzinuovi (BS)" };
+const ctx: RenderContext = { facts: FACTS, location: "Orzinuovi (BS)", jobTitle: "Tecnico elettricista fotovoltaico" };
 const INJECTED = `<script>alert("x")</script> & 'y'`;
 const ESCAPED = "&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt; &amp; &#39;y&#39;";
 
@@ -37,7 +37,7 @@ describe("foglio A4 WhatsApp", () => {
   it("escapa tutto il testo del contenuto", () => {
     const injected = renderJobSheetHtml(
       { ...JOB_SHEET, title: INJECTED, tags: [INJECTED], description: { ...JOB_SHEET.description, profile: [INJECTED] } },
-      { facts: { ...FACTS, company_name: INJECTED }, location: INJECTED },
+      { facts: { ...FACTS, company_name: INJECTED }, location: INJECTED, jobTitle: INJECTED },
       specsOf("whatsapp", "A4"),
     );
     expect(injected).not.toContain("<script>");

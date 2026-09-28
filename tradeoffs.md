@@ -37,6 +37,11 @@
 10. **Il formato decide le parti, il kind la loro forma.** Dagli esempi emerge che il foglio WhatsApp contiene lo stesso corpo di Indeed, più intestazione ed etichette. Invece di uno schema per canale, compongo blocchi riusabili.
 11. **Proporzioni.** 1:1, 4:5 e 9:16 cambiano layout e limiti (override in `specs`), non la forma del contenuto: una sola `Creative` e un solo template HTML che si adatta alle dimensioni. Template distinti per proporzione sarebbero più curati, ma la priorità va alla generazione.
 
+## Cosa ho scartato strada facendo
+
+- **Cifre della RAL nel copy tramite un segnaposto `{RAL}`.** Provato nel giro v9: il modello lo usava anche fuori contesto, raddoppiava il prefisso ("da da 26.000 €") e ripeteva la RAL già mostrata. Ritirato: la RAL resta composta solo dal renderer.
+- **Un endpoint per modificare singoli campi.** Valutato per l'edit manuale; l'edit a contenuto completo, copiato dalla lettura e reinviato, si è rivelato sufficiente.
+
 ## Cosa ho sacrificato
 
 - **UI volutamente minimale**, come consente la traccia: il tempo va alla generazione reale e alla verifica del copy, che sono criteri di valutazione.
@@ -46,6 +51,9 @@
 
 - I limiti di default sono scelte editoriali ragionevoli, non limiti delle piattaforme verificati.
 - Il guardrail RAL riconosce solo le cifre esatte; formulazioni come "da 32 a 38 mila" possono sfuggire in parte.
+- Il guardrail di tono (contrapposizioni, emoji, età) è euristico: riconosce strutture, non il significato, e può bloccare una precisazione legittima; il costo è un retry.
+- La regola sulla fedeltà ai dati riduce i giudizi non supportati ("in continua espansione") ma non li azzera: la revisione umana, con l'edit manuale, resta necessaria prima della pubblicazione.
+- I testi dentro le creative hanno limiti stretti: alcuni angle portano il modello oltre il massimo anche dopo il retry (Instagram 4:5 negli esempi). I limiti morbidi e il font adattato riducono il problema, non lo eliminano.
 - La separazione tra dati e istruzioni riduce il rischio di prompt injection ma non lo elimina. L'output resta vincolato dallo schema e va comunque rivisto da una persona prima della pubblicazione.
 - `TODO`
 

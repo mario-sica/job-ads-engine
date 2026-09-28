@@ -184,7 +184,7 @@ Gli step 1–4 committano file **già presenti** nella cartella: rileggili, veri
     - script `dev` del pacchetto api: prima migrazioni e seed (idempotenti), poi il server con `tsx watch`;
     - script `dev` della root: per ora avvia solo l'api.
   - Test con `fastify.inject` e LLM finto, compreso il caso senza chiave: letture ed edit manuali funzionano, la generazione risponde 503.
-- [ ] **10. `feat/sample-data`** (priorità alta: è l'unica prova della qualità del copy)
+- [x] **10. `feat/sample-data`** (priorità alta: è l'unica prova della qualità del copy)
   - Script che genera annunci d'esempio per `jo_001` con l'API reale: almeno un annuncio per kind, con due varianti di angle diverso, e una combinazione per ciascun formato.
   - Rileggi gli output con lo sviluppatore: ogni problema osservato diventa una riga del log delle iterazioni in `prompts.md`, con la modifica fatta al prompt.
   - Versiona `apps/api/data/gyver.db`, così chi valuta vede subito il risultato anche senza chiave.

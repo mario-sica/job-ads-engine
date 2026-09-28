@@ -1,7 +1,7 @@
 import { llmOutputSchemaFor } from "@job-ads-engine/content";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { buildPrompt, PROMPT_VERSION, TOOL_NAME } from "../src/llm/prompts.js";
+import { buildPrompt, PROMPT_VERSION, TOOL_NAME, wordBudget } from "../src/llm/prompts.js";
 import { buildInputSnapshot } from "../src/llm/snapshot.js";
 import { llmSetup } from "./llm-fixtures.js";
 
@@ -27,13 +27,28 @@ describe("prompt", () => {
 
   it("i limiti della riga entrano nel prompt; i campi morbidi della creative chiedono l'obiettivo", () => {
     expect(buildPrompt(format("instagram", "image", "9:16"), snapshotFor()).system).toContain(
-      "- image.hook: punta a 40 caratteri (circa 6 parole); oltre 48 il testo viene rifiutato",
+      "- image.hook: al massimo 5 parole, una sola informazione (circa 40 caratteri; oltre 48 il testo viene rifiutato)",
     );
     const square = buildPrompt(format("instagram", "image", "1:1"), snapshotFor()).system;
-    expect(square).toContain("- image.title.text: punta a 30 caratteri (circa 4 parole); oltre 36 il testo viene rifiutato");
+    expect(square).toContain(
+      "- image.title.text: al massimo 4 parole, una sola informazione (circa 30 caratteri; oltre 36 il testo viene rifiutato)",
+    );
     expect(square).toContain("- image.visual_brief: al massimo 200 caratteri (circa 29 parole)");
     expect(buildPrompt(format("whatsapp", "image", "A4"), snapshotFor()).system).toContain("- image.title: al massimo 40 caratteri");
     expect(buildPrompt(format("whatsapp", "text"), snapshotFor()).system).toContain("- text.bullets: da 3 a 6 elementi, ciascuno al massimo 120 caratteri (circa 17 parole)");
+  });
+
+  it("i campi brevi si misurano in parole e portano una sola informazione", () => {
+    const square = buildPrompt(format("instagram", "image", "1:1"), snapshotFor()).system;
+    expect(square).toContain("regolati sul numero di parole indicato accanto a ogni limite");
+    expect(square).toContain("Un campo breve porta una sola informazione");
+    expect(square).toContain("subline: un solo dettaglio concreto");
+    const sheet = buildPrompt(format("whatsapp", "image", "A4"), snapshotFor()).system;
+    expect(sheet).toContain("se la descrizione dell'azienda è lunga, scegline una o due invece di riportarla per intero");
+  });
+
+  it("il budget in parole è per difetto", () => {
+    expect([wordBudget(30), wordBudget(40), wordBudget(81), wordBudget(3)]).toEqual([4, 5, 11, 1]);
   });
 
   it("la regola sui dati mostrati dal sistema dipende dal kind", () => {

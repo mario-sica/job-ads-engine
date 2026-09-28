@@ -79,7 +79,24 @@ describe("generazione", () => {
     expect(retry.messages[1]).toMatchObject({ role: "assistant" });
     const [result] = lastUserContent(retry);
     expect(result).toMatchObject({ type: "tool_result", tool_use_id: "toolu_first", is_error: true });
-    expect(result!.content).toContain('image.hook: 48 caratteri, massimo 36. Accorcia: "UN HOOK DECISAMENTE TROPPO LUNGO PER UN QUADRATO"');
+    expect(result!.content).toContain(
+      'image.hook: 48 caratteri (8 parole), massimo 36: "UN HOOK DECISAMENTE TROPPO LUNGO PER UN QUADRATO". ' +
+        "Riscrivilo da capo con al massimo 4 parole (circa 30 caratteri), tenendo solo l'informazione più importante",
+    );
+    expect(result!.content).toContain("un testo uguale viene rifiutato di nuovo");
+  });
+
+  it("retry su un testo lungo fuori dalla creative: obiettivo al 90% del massimo", async () => {
+    const target = format("indeed", "text");
+    const base = validOutput(target);
+    const headline = "x ".repeat(50).trim(); // 99 caratteri, massimo 90
+    const first = { ...base, text: { ...base.text, headline } };
+    const { client, requests } = fakeClient(toolUse(first, "toolu_first"), toolUse(validOutput(target), "toolu_second"));
+
+    await generateContent(input(target), client);
+    const [result] = lastUserContent(requests[1]!);
+    expect(result!.content).toContain("text.headline: 99 caratteri (50 parole), massimo 90");
+    expect(result!.content).toContain("al massimo 11 parole (circa 81 caratteri)");
   });
 
   it("doppio fallimento: GenerationFailedError con l'elenco degli errori", async () => {

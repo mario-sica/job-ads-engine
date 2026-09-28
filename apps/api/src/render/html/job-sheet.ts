@@ -8,7 +8,7 @@ const A4 = { width: 1240, height: 1754 };
 const CSS = `
 .sheet { padding: 72px 88px; display: flex; flex-direction: column; gap: 36px; height: 100%; }
 .head { display: flex; align-items: center; gap: 40px; }
-.logo { width: 200px; height: 120px; font-size: 22px; flex: none; }
+.logo { min-width: 200px; max-width: 320px; height: 120px; padding: 0 16px; font-size: 22px; line-height: 1.2; overflow: hidden; flex: none; }
 .head h1 { font-size: 64px; line-height: 1.1; }
 .subtitle { font-size: 32px; color: #4a4a4a; margin-top: 8px; }
 .chips { list-style: none; display: flex; flex-wrap: wrap; gap: 14px; }

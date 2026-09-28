@@ -6,7 +6,7 @@ export type Db = Database.Database;
 
 /*
  * Journal mode lasciato al default: con WAL le scritture recenti restano nel file
- * `-wal`, e il gyver.db versionato potrebbe non contenerle.
+ * `-wal`, e il DB della demo copiato in `demo_db/` potrebbe non contenerle.
  */
 export function openDatabase(path: string): Db {
   if (path !== ":memory:") mkdirSync(dirname(path), { recursive: true });

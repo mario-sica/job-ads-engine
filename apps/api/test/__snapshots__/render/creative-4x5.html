@@ -18,7 +18,8 @@ body { background: #e8e8e8; display: flex; justify-content: center; padding: 24p
 
 .creative { display: flex; flex-direction: column; gap: 28px; padding: 64px; height: 100%; }
 .logos { display: flex; align-items: center; gap: 18px; font-size: 22px; }
-.logos .placeholder { width: 180px; height: 72px; }
+/* Il riquadro si allarga con il nome dell'azienda e lo manda a capo: un nome lungo non esce dal bordo. */
+.logos .placeholder { min-width: 180px; max-width: 420px; height: 72px; padding: 0 16px; line-height: 1.15; overflow: hidden; }
 .logos .times { font-size: 36px; color: #5f6368; }
 .title { font-size: calc(84px * var(--fit, 1)); line-height: 1.2; }
 .title mark { background: #ffd600; color: inherit; padding: 0 8px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }

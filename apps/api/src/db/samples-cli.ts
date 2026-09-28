@@ -13,6 +13,7 @@ import { seed } from "./seed.js";
  * Genera gli annunci d'esempio con l'API reale, attraverso lo stesso service
  * dell'API. Salta quelli già presenti: rilanciato dopo un fallimento genera solo
  * i mancanti. Per rigenerare tutto: `npm run db:reset` prima.
+ * Con degli id come argomenti genera solo gli esempi di quelle job offer.
  */
 async function main() {
   loadEnvFile();
@@ -34,7 +35,8 @@ async function main() {
     console.log(`Modello ${config.llmModel} · prompt ${PROMPT_VERSION} · DB ${config.databasePath}\n`);
 
     const failures: string[] = [];
-    for (const sample of SAMPLES) {
+    const only = new Set(process.argv.slice(2));
+    for (const sample of SAMPLES.filter((s) => only.size === 0 || only.has(s.jobOffer))) {
       const target = formats.find(
         (f) => f.channel_code === sample.channel && f.format === sample.format && f.aspect_ratio === sample.aspectRatio,
       );
@@ -49,6 +51,7 @@ async function main() {
         const ad = await service.create({
           job_offer_id: sample.jobOffer,
           channel_format_id: target.id,
+          location: sample.location,
           variants: sample.angles.map((angle) => ({ angle })),
         });
         console.log(`→ annuncio ${ad.id} (${name}): varianti ${ad.variants.map((v) => `${v.label}=${v.id}`).join(", ")}\n`);

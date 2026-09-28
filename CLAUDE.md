@@ -39,10 +39,11 @@ packages/content/         contratto del contenuto (FATTO: non riscrivere senza r
 apps/api/                 backend Fastify
   db/migrations/          schema SQL numerato
   db/seed/                canali, formati con specs, job offer di esempio
-  data/gyver.db           DB popolato con annunci d'esempio (versionato)
+  data/                   DB di lavoro (gyver.db) e copia della demo (demo.db), non versionati
   src/                    config, db, modules (routes → service → repository), llm, render, server
   test/                   test Vitest (DB in memoria, LLM finto)
 apps/web/                 UI React + Vite (modulo opzionale)
+demo_db/gyver.db          annunci d'esempio (versionato; si apre solo in copia con npm run dev:demo)
 ```
 
 ## Principi di design (non negoziabili)
@@ -197,7 +198,7 @@ Gli step 1–4 committano file **già presenti** nella cartella: rileggili, veri
   - Script `dev` della root: avvia api e web insieme con `concurrently`, con output etichettato per processo.
   - Dipendenze già approvate: `react`, `react-dom`, `vite`, `@vitejs/plugin-react`, `@types/react`, `@types/react-dom` in `apps/web`; `concurrently` nella root.
   - Indirizzo della UI: `http://localhost:5173`.
-- [ ] **12. `docs/finalize`**
+- [x] **12. `docs/finalize`**
   - Chiudi tutti i `TODO` dei documenti.
   - Nel readme, il percorso completo dalla creazione di un annuncio al contenuto generato.
   - Priorità in `tradeoffs.md`.

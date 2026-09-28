@@ -1,6 +1,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import type { LlmClient } from "../llm/client.js";
 import type { InputSnapshot } from "../llm/snapshot.js";
+import type { LocationInput } from "../modules/locations/repository.js";
 
 export interface SampleAd {
   jobOffer: string;
@@ -9,12 +10,16 @@ export interface SampleAd {
   aspectRatio: string | null;
   /** Due angle diversi per annuncio, fattuali (niente contrapposizioni) e sostenuti dai dati della job offer. */
   angles: [string, string];
+  /** Luogo pubblicato diverso da quello della job offer; se assente, quello della job offer. */
+  location?: LocationInput;
 }
 
 /**
  * jo_001 (la job offer della traccia) su un annuncio per kind e tutti i formati;
  * le job offer fittizie ciascuna su un formato diverso, per provare casi che
- * jo_001 non ha: RAL solo minima o assente, apprendistato, dati scarni, injection.
+ * jo_001 non ha: RAL solo minima o assente, apprendistato, dati scarni, injection,
+ * part-time, ruolo senior, descrizione lunga, nessuna esperienza, Centro-Sud.
+ * Insieme coprono tutti i 12 formati; uno pubblica in un luogo diverso dalla sede.
  */
 export const SAMPLES: SampleAd[] = [
   {
@@ -72,6 +77,58 @@ export const SAMPLES: SampleAd[] = [
     format: "image",
     aspectRatio: "A4",
     angles: ["furgone aziendale e corsi di aggiornamento", "impianti civili e domotica KNX"],
+  },
+  {
+    jobOffer: "jo_105",
+    channel: "instagram",
+    format: "image",
+    aspectRatio: "1:1",
+    angles: ["part-time di 30 ore con i pomeriggi liberi", "antifurto e videosorveglianza per case e negozi"],
+  },
+  {
+    jobOffer: "jo_106",
+    channel: "instagram",
+    format: "image",
+    aspectRatio: "4:5",
+    angles: ["guidare una squadra nei cantieri industriali", "auto aziendale e retribuzione per profili esperti"],
+  },
+  {
+    jobOffer: "jo_107",
+    channel: "instagram",
+    format: "image",
+    aspectRatio: "9:16",
+    angles: ["il patentino ascensorista preparato dall'azienda", "benefit: buoni pasto, welfare e furgone da casa"],
+  },
+  {
+    jobOffer: "jo_108",
+    channel: "instagram",
+    format: "image_text",
+    aspectRatio: "4:5",
+    angles: ["iniziare senza esperienza con formazione retribuita", "reti in fibra ottica in tutta la Puglia"],
+  },
+  {
+    jobOffer: "jo_108",
+    channel: "tiktok",
+    format: "image",
+    aspectRatio: "9:16",
+    angles: ["un mestiere nuovo in quattro settimane di formazione", "lavorare in coppia con un tecnico esperto"],
+    location: {
+      street_name: null,
+      street_number: null,
+      postal_code: null,
+      locality: "Lecce",
+      province: "Lecce",
+      province_code: "LE",
+      region: "Puglia",
+      country_code: "IT",
+    },
+  },
+  {
+    jobOffer: "jo_109",
+    channel: "instagram",
+    format: "image_text",
+    aspectRatio: "9:16",
+    angles: ["refrigerazione per supermercati e ristoranti", "impianti a CO2 e patentino FGAS"],
   },
 ];
 

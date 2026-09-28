@@ -11,7 +11,8 @@ import { seed } from "./seed.js";
 
 /*
  * Genera gli annunci d'esempio con l'API reale, attraverso lo stesso service
- * dell'API. Parte solo su un DB senza annunci: `npm run db:reset` prima.
+ * dell'API. Salta quelli già presenti: rilanciato dopo un fallimento genera solo
+ * i mancanti. Per rigenerare tutto: `npm run db:reset` prima.
  */
 async function main() {
   loadEnvFile();
@@ -27,7 +28,7 @@ async function main() {
       (line) => console.log(line),
     );
     const service = createAdsService({ db, llm });
-    if (service.list({}).length > 0) throw new Error("il DB contiene già annunci: lancia prima `npm run db:reset`");
+    const existing = new Set(service.list({ job_offer_id: SAMPLE_JOB_OFFER }).map((ad) => ad.channel_format_id));
 
     const formats = createChannelFormatsRepository(db).list();
     console.log(`Modello ${config.llmModel} · prompt ${PROMPT_VERSION} · DB ${config.databasePath}\n`);
@@ -39,6 +40,10 @@ async function main() {
       );
       if (!target) throw new Error(`formato ${sample.channel} ${sample.format} ${sample.aspectRatio ?? ""} assente dal seed`);
       const name = `${target.channel_name} ${target.format}${target.aspect_ratio ? ` ${target.aspect_ratio}` : ""}`;
+      if (existing.has(target.id)) {
+        console.log(`· ${name}: già presente, saltato\n`);
+        continue;
+      }
       // Un annuncio fallito non ferma gli altri: un giro deve mostrare tutti i problemi.
       try {
         const ad = await service.create({
